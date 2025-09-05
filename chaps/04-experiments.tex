@@ -1,0 +1,75 @@
+\section{Experiments}
+
+We focus on the following research questions.
+
+\begin{enumerate}
+    \item \textbf{RQ1: Overall Performance.} 
+    How effective is LightNorm in detecting web tamper attacks compared to state-of-the-art baselines and WebNorm? 
+    We evaluate its precision, recall, and F1-score on standard benchmarks.
+
+    \item \textbf{RQ2: Ablation Study.} 
+    How do the core components of LightNorm contribute to its performance? 
+    We conduct ablation experiments on field clustering, attack generation, and prompt refinement to measure their individual impact.
+
+    \item \textbf{RQ3: Model Scalability.} 
+    How does LightNorm perform when deployed with different scales of lightweight, locally deployable LLMs? 
+    We assess the trade-offs between detection accuracy, efficiency, and resource consumption across small, medium, and larger models.
+
+    \item \textbf{RQ4: Direct Substitution.} 
+    What happens if WebNorm is directly replaced with a smaller LLM without architectural modifications? 
+    This comparison highlights the necessity of our proposed techniques over naïve model substitution.
+\end{enumerate}
+
+\begin{table}
+	\centering
+	\caption{Overall evaluation of LightNorm}
+	\label{tab:overall-eval}
+	\begin{tabular}{l|c|c|c|c}
+		\toprule
+		\textbf{Model}                    & \multicolumn{2}{c|}{\textbf{TrainTicket}} & \multicolumn{2}{c}{\textbf{NiceFish}}                                        \\
+		\midrule
+		                                  & \textbf{Precision}                         & \textbf{Recall}                        & \textbf{Precision} & \textbf{Recall} \\
+		\midrule
+		LogRobust~\cite{zhang2019robust}  & 0.120                                      & 0.650                                  & 0.207              & 0.540           \\
+		LogFormer~\cite{guo2024logformer} & 0.272                                      & 0.764                                  & 0.301              & 0.702           \\
+		WebNorm~\cite{liao2024detecting}  & \textbf{1.000}                             & 0.704                                  & \textbf{1.000}     & 0.750           \\
+		\textbf{LightNorm (Ours)}         & \textbf{1.000}                             & \textbf{X}                         & \textbf{1.000}     & \textbf{X}  \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+\begin{table}
+	\centering
+	\caption{Ablation Study}
+	\label{tab:ablation-study}
+	\begin{tabular}{l|c|c}
+		\toprule
+		\textbf{Model}                & \textbf{TrainTicket} & \textbf{NiceFish} \\
+		\midrule
+		\textbf{Original (LightNorm)} & \textbf{X}        & \textbf{X}     \\
+		\midrule
+		w/o API relation prediction     & X                 & X              \\
+		w/o field clustering      & X                 & X              \\
+		w/o prompt refinement     & X                 & X              \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+
+\begin{table}
+	\centering
+	\caption{Comparison of Different LLMs}
+	\label{tab:comparing-llms}
+	\begin{tabular}{l|c|c|c|c}
+		\toprule
+		            & \multicolumn{2}{c|}{\textbf{TrainTicket}} & \multicolumn{2}{c}{\textbf{NiceFish}}                                        \\
+		\cmidrule{2-5}
+		            & \textbf{Percision}                         & \textbf{Recall}                        & \textbf{Percision} & \textbf{Recall} \\
+		\midrule
+		gpt-oss-120b      & 1.000                                      & X                         & 1.000              & X  \\
+		gpt-oss-20b & 1.000                  & X                                  & 1.000              & X           \\
+		gamma-20b  & 1.000                                      & X                                  & 1.000              & X  \\
+		gamma-7b & 1.000                                      & X                                  & 1.000              & X  \\
+		\bottomrule
+	\end{tabular}
+\end{table}

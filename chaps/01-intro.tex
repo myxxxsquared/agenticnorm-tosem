@@ -1,4 +1,25 @@
 
 \section{Introduction}
 
-WebNorm~\cite{liao2024detecting}
+Web applications play a critical role in modern infrastructures, supporting domains such as finance, e-commerce, and healthcare. Their reliability and security are of paramount importance. Unfortunately, web frontends are inherently manipulable: attackers can alter client-side code or parameters to bypass validations, tamper with workflows, or inject abnormal behaviors. These manipulations often manifest as subtle anomalies in backend logs, making detection both crucial and challenging. Traditional log-based anomaly detection methods, such as rule-based systems (e.g., Splunk, QRadar) and deep learning models (e.g., DeepLog, LogAnomaly, LogRobust), face three major obstacles: (1) subtle abnormalities may be indistinguishable from normal variations, (2) distribution shifts caused by evolving tamper strategies degrade model reliability, and (3) most solutions provide limited explainability, hindering root cause.
+
+To address these limitations, recent work introduced \textbf{WebNorm}, an LLM-based anomaly detection framework that learns behavioral invariants from web logs. WebNorm captures data, flow, and common-sense consistency rules in first-order logic, providing both alarms and explanations when invariants are violated. While effective, WebNorm heavily depends on a large, closed-source LLM and program source code for context alignment, raising security concerns and limiting practical deployment. Moreover, its detection quality is highly sensitive to prompt engineering, often requiring expert intervention to iteratively refine.
+
+In this paper, we propose \textbf{LightNorm}, a lightweight, multi-agent anomaly detection framework that addresses these limitations by rethinking how invariants are generated and refined with smaller, locally deployable LLMs. LightNorm is built upon two key insights:
+
+\begin{itemize}
+    \item \textbf{Field Clustering for Context Reduction.} Lightweight models struggle with long log contexts. We mitigate this by decomposing complex log structures into semantically coherent field clusters. Each cluster is processed independently to derive localized invariants, which are later aggregated. This clustering reduces context length while retaining essential semantics, improving efficiency and scalability.
+    \item \textbf{Attack-Guided Prompt Refinement.} Relying on fixed prompts yields brittle invariants. We design an iterative loop where adversarial attack logs are automatically generated to test current invariants. Detected weaknesses guide a prompt refinement process, improving the robustness and coverage of invariants. This feedback loop reduces the need for manual prompt tuning and strengthens end-to-end anomaly detection.
+\end{itemize}
+
+LightNorm integrates these components into a \textbf{multi-agent workflow}, where agents for invariant generation, attack generation, and prompt refinement cooperate iteratively. The result is a system that adapts and self-improves without extensive human involvement.
+
+\paragraph{Contributions.} This paper makes the following contributions:
+\begin{itemize}
+    \item We identify the key limitations of WebNorm—heavyweight LLM dependency, source code reliance, and prompt fragility—and propose LightNorm as a lightweight alternative.
+    \item We introduce a \emph{field clustering} technique that mitigates context length limitations of compact models by decomposing logs into structured, comparable groups.
+    \item We propose an \emph{attack-generation and prompt-refinement loop} that iteratively enhances invariants through automated adversarial feedback.
+    \item We build a multi-agent anomaly detection system that achieves performance comparable to WebNorm, while enabling secure, efficient, and practical deployment with local models.
+\end{itemize}
+
+Extensive experiments on benchmark datasets (e.g., TrainTicket and NiceFish) show that LightNorm achieves similar detection accuracy and explainability to WebNorm, while offering lower cost, reduced reliance on closed-source infrastructure, and improved automation in prompt refinement. This work takes a step toward practical and trustworthy anomaly detection for real-world web applications.

@@ -1,0 +1,7 @@
+\section{Discussion}
+
+\textbf{Why can adversarial attacks improve anomaly detection efficiency?}
+
+Adversarial attacks play a crucial role in refining the prompts used for invariant generation. At the initial stage (Round 0), the prompt may fail to capture critical invariants, leading to missed detections for certain types of tamper attacks. However, when we introduce adversarial attacks that exploit these weaknesses, the system is forced to adapt: the failure cases serve as concrete counterexamples that guide the prompt-refinement process. After just one refinement iteration (Round 1), the updated prompt can successfully detect the previously missed anomaly. 
+
+For example, in Round 0, LightNorm may fail to detect an attack where [\texttt{PLACEHOLDER\_EXAMPLE}], but after one iteration of adversarial attack–guided refinement, the system adjusts the prompt and captures the invariant necessary to identify this anomaly. This self-improving loop demonstrates how adversarial attacks not only test the robustness of the system but also actively drive the enhancement of detection accuracy, ultimately reducing the need for manual intervention and improving efficiency in practice.
