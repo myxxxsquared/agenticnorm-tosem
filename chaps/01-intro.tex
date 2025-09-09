@@ -1,4 +1,6 @@
 
+{\color{red}{TODOS: 1) replace all "attack" to abnormal.}}
+
 \section{Introduction}
 
 Web applications play a critical role in modern infrastructures, supporting domains such as finance, e-commerce, and healthcare. Their reliability and security are of paramount importance. Unfortunately, web frontends are inherently manipulable: attackers can alter client-side code or parameters to bypass validations, tamper with workflows, or inject abnormal behaviors. These manipulations often manifest as subtle anomalies in backend logs, making detection both crucial and challenging. Traditional log-based anomaly detection methods, such as rule-based systems (e.g., Splunk, QRadar) and deep learning models (e.g., DeepLog, LogAnomaly, LogRobust), face three major obstacles: (1) subtle abnormalities may be indistinguishable from normal variations, (2) distribution shifts caused by evolving tamper strategies degrade model reliability, and (3) most solutions provide limited explainability, hindering root cause.
@@ -16,10 +18,7 @@ In this paper, we propose \lighttechname, a lightweight, multi-agent anomaly det
 
 \paragraph{Contributions.} This paper makes the following contributions:
 \begin{itemize}
-    \item We identify the key limitations of WebNorm—heavyweight LLM dependency, source code reliance, and prompt fragility—and propose \lighttechname as a lightweight alternative.
-    \item We introduce a \emph{field clustering} technique that mitigates context length limitations of compact models by decomposing logs into structured, comparable groups.
-    \item We propose an \emph{attack-generation and prompt-refinement loop} that iteratively enhances invariants through automated adversarial feedback.
-    \item We build a multi-agent anomaly detection system that achieves performance comparable to WebNorm, while enabling secure, efficient, and practical deployment with local models.
+    \item We propose \lighttechname, a multi-agent framework for web anomaly detection that eliminates the dependency on application source code.
+    \item We implement the \lighttechname framework and evaluate it on real-world benchmarks, including TrainTicket and NiceFish.  
+    \item Experimental results demonstrate that \lighttechname requires less contextual information while achieving more effective anomaly detection compared to existing approaches.
 \end{itemize}
-
-Extensive experiments on benchmark datasets (e.g., TrainTicket and NiceFish) show that \lighttechname achieves similar detection accuracy and explainability to WebNorm, while offering lower cost, reduced reliance on closed-source infrastructure, and improved automation in prompt refinement. This work takes a step toward practical and trustworthy anomaly detection for real-world web applications.

@@ -1,47 +1,32 @@
 \section{Motivating Example}
 
-To illustrate the challenges of inferring invariants from API logs, we consider a representative example from a railway ticketing system. 
+To illustrate the challenges of inferring invariants from API logs, we consider an anomaly case extracted from the \emph{TrainTicket} dataset. 
 
 \paragraph{Example Scenario.} 
-Suppose a user issues two consecutive API calls: \texttt{queryOrders} to retrieve their order history, followed by \texttt{cancelOrder} to cancel a specific ticket. The corresponding log entries are shown below.
+Suppose a user issues two consecutive API calls: \texttt{queryOrders} to retrieve their own order history, followed by \texttt{cancelOrder} to cancel a ticket. The corresponding log entries are shown below.
 
+A natural invariant between these two APIs is that \texttt{cancelOrder.arguments.orderId} must match one of the order identifiers returned by \texttt{queryOrders.response.data.id}. This invariant enforces that users can only cancel tickets they actually own. 
 
-From these two logs, one natural invariant is that the \texttt{cancelOrder.arguments.orderId} must match one of the order identifiers returned by \texttt{queryOrders.response.data.id}. This invariant captures the semantic relationship between the two APIs.
+In the anomaly observed in the TrainTicket dataset, however, this constraint is violated: a user is able to cancel another person’s ticket by providing an arbitrary order identifier. If deployed in a real system, such behavior could enable malicious users to obtain illegitimate refunds or disrupt other passengers’ orders. WebNorm can in principle detect this anomaly, but only if the prompt explicitly specifies the relationship that \texttt{cancelOrder.arguments.orderId} should match one of \texttt{queryOrders.response.data.id}. This highlights the difficulty of reliably capturing such invariants without manual intervention. 
 
 \paragraph{Challenges for Small Models.} 
-Automatically discovering such invariants is far from trivial. Small models face two main limitations:
+Automatically discovering semantic invariants from web logs is non-trivial. Small models in particular face two fundamental challenges:
 
 \begin{itemize}
-    \item \textbf{Context Length Limit.} 
-    Even this small motivating example already spans hundreds of tokens due to nested JSON structures. In practice, real-world logs are often far longer, since a single \texttt{queryOrders} response may return dozens of orders, each with multiple fields. This quickly pushes the log length to several thousand tokens. We empirically observed that a significant portion of logs directly exceed the model’s maximum context length, making it impossible to process them in full.
+    \item \textbf{Challenge 1: Limited Context Capacity.}  
+    Real-world web logs are often very long due to nested JSON structures and verbose API responses. Even the motivating example can easily span hundreds of tokens, while a single \texttt{queryOrders} response may contain dozens of orders, each with multiple fields. As a result, many logs exceed the maximum context window of compact LLMs, making it impossible to process them in full. Table~\ref{tab:log_length} quantifies this issue by showing the proportion of logs that surpass both the global maximum context length and the local capacity of a high-end compact model (Gemma3-27B). Hardware memory further tightens this constraint: for instance, a 27B-parameter model running on a 49GB GPU typically supports only 16k–32k tokens, which is still insufficient for a non-negligible fraction of logs.
 
-    Table~\ref{tab:log_length} summarizes the proportion of logs that exceed the context window. The second column shows the percentage of logs longer than the global maximum context length, while the third column shows the proportion of logs that cannot even fit into a high-capacity local model (Gemma3-27B).
-    
-    \begin{table}[h]
-    \centering
-    \caption{Proportion of logs exceeding length constraints.}
-    \label{tab:log_length}
-    \begin{tabular}{lcc}
-    \toprule
-    \textbf{Dataset} & \textbf{\% logs $>$ global max length} & \textbf{\% logs $>$ Gemma3-27B capacity} \\
-    \midrule
-    TrainTicket & --\% & --\% \\
-    NiceFish    & --\% & --\% \\
-    Other       & --\% & --\% \\
-    \bottomrule
-    \end{tabular}
-    \end{table}
-
-    \item \textbf{Reasoning Ability.} 
-    Small models heavily rely on manually crafted prompts. They often fail to recognize cross-API relationships, such as that the cancellation target must belong to the queried order set. In many cases, the model simply ``does not know what to infer,'' leading to missing or incorrect invariants.
+    \item \textbf{Challenge 2: Reliance on Prompt Engineering and Model Reasoning.}  
+    Existing approaches such as WebNorm depend heavily on carefully crafted prompts and the reasoning power of large models. In practice, small models exhibit much weaker log comprehension: they often fail to capture cross-API relationships unless the prompt explicitly spells out the attack scenario. For example, detecting that \texttt{cancelOrder.arguments.orderId} must match one of \texttt{queryOrders.response.data.id} requires stating this condition directly in the prompt; otherwise, the model cannot infer the invariant. Simply replacing the large model with a smaller one thus leads to significant drops in detection accuracy.
 \end{itemize}
 
-\paragraph{Hardware Capacity Analysis.}
-When deploying locally, GPU memory further constrains the usable context length. Consider a single NVIDIA RTX 6000 Ada GPU with \textbf{49140MiB} memory. Running a 27B-parameter model such as \textbf{Gemma3-27B}, the maximum supported context window is roughly
-\[
-\text{MaxTokens} \approx \frac{49{,}140 \text{ MB}}{\text{Memory per token}}.
-\]
-Following standard scaling estimates, Gemma3-27B on 49GB VRAM can typically accommodate around \textbf{16k--32k tokens} in full precision, depending on batch size and precision optimizations. However, our empirical distribution shows that a non-negligible fraction of logs already exceed this limit. The last column of Table~\ref{tab:log_length} quantifies this effect. 
+
+% \paragraph{Hardware Capacity Analysis.}
+% When deploying locally, GPU memory further constrains the usable context length. Consider a single NVIDIA RTX 6000 Ada GPU with \textbf{49140MiB} memory. Running a 27B-parameter model such as \textbf{Gemma3-27B}, the maximum supported context window is roughly
+% \[
+% \text{MaxTokens} \approx \frac{49{,}140 \text{ MB}}{\text{Memory per token}}.
+% \]
+% Following standard scaling estimates, Gemma3-27B on 49GB VRAM can typically accommodate around \textbf{16k--32k tokens} in full precision, depending on batch size and precision optimizations. However, our empirical distribution shows that a non-negligible fraction of logs already exceed this limit. The last column of Table~\ref{tab:log_length} quantifies this effect. 
 
 \paragraph{Our Solution.}
 To address these challenges, we propose two complementary strategies:
