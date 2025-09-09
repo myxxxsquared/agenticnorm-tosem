@@ -3,7 +3,8 @@
 In this section, we present \textbf{\lighttechname}, a lightweight multi-agent anomaly detection framework for web applications. 
 \lighttechname is designed to overcome the limitations of prior solutions such as WebNorm, namely the reliance on heavyweight closed-source models, sensitivity to prompt engineering, and difficulty in handling long log contexts. 
 Our framework consists of three key components: (1) multi-agent architecture, (2) field clustering for context reduction, and (3) attack-driven prompt refinement for robustness. 
-Figure~\ref{fig:overview} provides an overview of the workflow.
+Figure~\ref{fig:overview} provides an overview of the workflow. 
+We first outline the overall workflow, and then describe each component in detail. 
 
 \subsection{Multi-Agent Workflow}
 \lighttechname organizes the detection process into a collaborative set of agents, each specializing in a particular subtask. 
@@ -12,19 +13,16 @@ Figure~\ref{fig:overview} provides an overview of the workflow.
     \item \textbf{Attack Generation Agent:} synthesizes adversarial attacks by summarizing existing tampering behaviors and hypothesizing new variants.
     \item \textbf{Prompt Refinement Agent:} evaluates invariant failures under generated attacks and iteratively improves the prompt templates to enhance coverage and detection accuracy.
 \end{itemize}
-This modular design allows \lighttechname to be deployed with compact, locally available models while maintaining adaptability and robustness.
-
+This modular decomposition ensures that each agent can focus on a well-defined subtask, and their collaboration enables adaptive and self-improving anomaly detection. 
 
 \subsection{Field Clustering for Context Reduction}
-Lightweight LLMs are constrained by limited context windows, making it infeasible to directly process lengthy, complex logs. To address this, we propose \emph{field clustering}, which decomposes log entries into semantically related groups, ensuring that invariants can still be extracted while fitting within the restricted input length.
-
-The process consists of three stages:
+Lightweight LLMs are constrained by limited context windows, making it infeasible to directly process lengthy, complex logs. To address this, we propose \emph{field clustering}, which decomposes log entries into semantically related groups, ensuring that invariants can still be extracted while fitting within the restricted input length. 
+To systematically reduce context while preserving semantics, we design a three-stage process:
 
 \begin{enumerate}
 \item \textbf{Log Expansion.}
 Structured logs are first parsed into fine-grained fields. To formalize this process, we define a recursive grammar for data types:
 
-```
 \[
 \text{Data} := \texttt{unknown} \;|\; \texttt{bool} \;|\; \texttt{number} \;|\; \texttt{string} \;|\; \texttt{dict}[key_1:\text{Data}, key_2:\text{Data}, \ldots] \;|\; \texttt{array}[\text{Data}]
 \]  
@@ -76,20 +74,16 @@ Based on this grammar, complex structures in logs (e.g., nested dictionaries or 
     \end{quote}  
 \end{itemize}  
 
-After expansion, including joining, all relevant information is expressed as flat fields, making downstream clustering and invariant extraction more effective.  
+After expansion and joining, all relevant information is expressed as flat fields, making downstream clustering and invariant extraction more effective.  
 
 \item \textbf{Clustering.}  
-After expansion, we obtain a large set of atomic fields. To manage context length, we group these fields into clusters based on semantic relatedness. Instead of manual heuristics, we directly employ an LLM for clustering: the model is prompted with the list of expanded fields and asked to output a partition of fields into clusters. For example, identifiers such as \verb|user_id|, \verb|session_id|, and joined fields with matching IDs are placed into one cluster; numerical values such as \verb|price|, \verb|amount|, and \verb|discount| form another cluster. This LLM-based approach leverages semantic knowledge to produce meaningful and task-relevant clusters.  
+Once expansion is complete, we obtain a large set of atomic fields, which must be organized into semantically meaningful groups. To manage context length, we group these fields into clusters based on semantic relatedness. Instead of manual heuristics, we directly employ an LLM for clustering: the model is prompted with the list of expanded fields and asked to output a partition of fields into clusters. For example, identifiers such as \verb|user_id|, \verb|session_id|, and joined fields with matching IDs are placed into one cluster; numerical values such as \verb|price|, \verb|amount|, and \verb|discount| form another cluster. This LLM-based approach leverages semantic knowledge to produce meaningful and task-relevant clusters.  
 
 \item \textbf{Invariant Extraction.}  
 Each cluster is independently analyzed by the LLM to derive invariants. Since each cluster is smaller than the entire log, the input length fits within the limited context window, while the invariants still capture critical dependencies among semantically related fields.  
-```
-
 \end{enumerate}
 
 Through this pipeline, long and complex logs are transformed into compact and semantically organized structures, enabling lightweight LLMs to generate invariants effectively without exceeding context limits.
-
-
 
 \subsection{Attack Generation and Prompt Refinement Loop}
 A central challenge in log-based anomaly detection is that prompt quality strongly influences the detection results. Fixed prompts are brittle and may fail to capture subtle invariants, leading to missed anomalies. To address this limitation, we propose an \emph{adversarial refinement loop}, in which attack generation and prompt adjustment are tightly coupled. The loop continuously strengthens prompts by exposing them to adversarial scenarios that exploit their current weaknesses.
@@ -97,18 +91,13 @@ A central challenge in log-based anomaly detection is that prompt quality strong
 The process unfolds in the following steps:
 
 \begin{itemize}
-\item \textbf{Invariant Extraction:} Starting from a given prompt, we derive invariants from the normal logs. These invariants encode consistency, semantic, or structural properties of the system. However, invariants are inherently incomplete and may fail to anticipate novel forms of manipulation.
+\item \textbf{Invariant Extraction:} We begin by deriving invariants from the normal logs using an initial prompt. These invariants encode consistency, semantic, or structural properties of the system. However, they are inherently incomplete and may fail to anticipate novel forms of manipulation.
 
-```
-\item \textbf{Attack Generation:} Based on the extracted invariants and a pool of normal logs, we deliberately generate abnormal logs that are difficult for the current invariants to detect. The attack generation process is guided by the \emph{OWASP API Security Top 10}, which is one of the most authoritative industry standards for summarizing API vulnerabilities. The OWASP API Top 10 categories, updated periodically, are widely adopted by practitioners and security auditors, and they collectively cover the majority of web API attacks observed in the wild. To make the framework compatible with our log-based setting, we exclude frequency- and usage-based attacks (e.g., excessive resource consumption), which our system cannot directly model.  
+\item \textbf{Attack Generation:} Next, based on the extracted invariants and a pool of normal logs, we deliberately generate abnormal logs that are difficult for the current invariants to detect. The attack generation process is guided by the \emph{OWASP API Security Top 10}, which is one of the most authoritative industry standards for summarizing API vulnerabilities (details in the next subsection). To make the framework compatible with our log-based setting, we exclude frequency- and usage-based attacks (e.g., excessive resource consumption).  
 
-Next, we use an LLM (e.g., \texttt{o3}) to analyze each remaining OWASP attack category more deeply, decomposing them into finer-grained subcategories. These subcategories capture different attack semantics, such as parameter tampering, authentication bypass, or injection-style manipulations, as summarized in Table~\ref{tab:attack_types_placeholder}. Given a normal log, we randomly sample an attack category and instruct the LLM to synthesize an adversarial abnormal log that aligns with the attack’s semantics. Crucially, the generation is adversarial: the model is explicitly instructed to evade the existing invariants so that the resulting log is more challenging to detect.  
+\item \textbf{Dataset Construction:} These generated abnormal logs are then combined with the original normal logs, forming a labeled dataset that covers both benign and adversarial scenarios. This dataset becomes the foundation for evaluating and refining the prompts.  
 
-\item \textbf{Dataset Construction:} The generated abnormal logs are combined with the original normal logs, forming a labeled dataset that covers both benign and adversarial scenarios. This dataset becomes the foundation for evaluating and refining the prompts.  
-
-\item \textbf{Prompt Refinement:} Instead of literal fine-tuning of model parameters, we adopt a \emph{prompt fine-tuning} process. Specifically, the current invariants are evaluated on the constructed dataset, and each false positive or false negative is fed back into an LLM to solicit a targeted refinement suggestion. The model can propose to add, modify, or delete clauses in the prompt so that the refined prompt is more robust against the observed errors. After collecting refinement suggestions across the dataset, we aggregate them into a revised prompt.  
-```
-
+\item \textbf{Prompt Refinement:} Finally, instead of literal fine-tuning of model parameters, we adopt a \emph{prompt fine-tuning} process. The current invariants are evaluated on the constructed dataset, and each false positive or false negative is fed back into an LLM to solicit a targeted refinement suggestion. The model can propose to add, modify, or delete clauses in the prompt so that the refined prompt is more robust against the observed errors. After collecting refinement suggestions across the dataset, we aggregate them into a revised prompt.  
 \end{itemize}
 
 This iterative adversarial loop allows prompts to evolve dynamically. Each cycle expands the attack space by introducing logs that specifically target the weaknesses of the current invariants, and in turn strengthens the prompts by incorporating counterexamples. Over time, this reduces reliance on manual intervention and improves robustness against both known and novel attacks.
@@ -144,7 +133,6 @@ API10 & Unsafe Consumption of APIs &  Used – synthesizes abnormal logs involvi
 
 By leveraging this taxonomy, our attack generation process inherits both breadth and credibility: it covers a wide spectrum of realistic API threats while remaining compatible with our log-based invariant detection setting.
 
-
 \subsection{End-to-End Detection Pipeline}
 The complete workflow of \lighttechname consists of the following steps:
 \begin{enumerate}
@@ -153,4 +141,4 @@ The complete workflow of \lighttechname consists of the following steps:
     \item \textbf{Adversarial Refinement:} attack generation and prompt refinement iteratively strengthen the invariants. 
     \item \textbf{Runtime Detection:} during deployment, incoming logs are validated against the learned invariants, and violations are flagged with explanations. 
 \end{enumerate}
-This pipeline produces explainable anomaly detection that balances efficiency, coverage, and interpretability, while remaining deployable with lightweight, local models.
+Together, these steps integrate field clustering and adversarial refinement into a cohesive detection pipeline, enabling \lighttechname\ to balance efficiency, explainability, and robustness, while remaining deployable with lightweight, local models.
