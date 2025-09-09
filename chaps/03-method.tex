@@ -1,1 +1,47 @@
 \section{Method}
+
+\section{Method}
+
+In this section, we present \textbf{LightNorm}, a lightweight multi-agent anomaly detection framework for web applications. 
+LightNorm is designed to overcome the limitations of prior solutions such as WebNorm, namely the reliance on heavyweight closed-source models, sensitivity to prompt engineering, and difficulty in handling long log contexts. 
+Our framework consists of three key components: (1) multi-agent architecture, (2) field clustering for context reduction, and (3) attack-driven prompt refinement for robustness. 
+Figure~\ref{fig:overview} provides an overview of the workflow.
+
+\subsection{Multi-Agent Workflow}
+LightNorm organizes the detection process into a collaborative set of agents, each specializing in a particular subtask. 
+\begin{itemize}
+    \item \textbf{Invariant Generation Agent:} derives candidate invariants from clustered log fields and formulates them into executable rules. 
+    \item \textbf{Attack Generation Agent:} synthesizes adversarial attacks by summarizing existing tampering behaviors and hypothesizing new variants.
+    \item \textbf{Prompt Refinement Agent:} evaluates invariant failures under generated attacks and iteratively improves the prompt templates to enhance coverage and detection accuracy.
+\end{itemize}
+This modular design allows LightNorm to be deployed with compact, locally available models while maintaining adaptability and robustness.
+
+\subsection{Field Clustering for Context Reduction}
+Lightweight LLMs are constrained by limited context windows, making it infeasible to directly process lengthy, complex logs. 
+To address this, we propose \emph{field clustering}, which decomposes log entries into semantically related groups:
+\begin{enumerate}
+    \item \textbf{Log Expansion:} structured logs are parsed into fine-grained fields, such as identifiers, parameters, and state values. 
+    \item \textbf{Clustering:} fields are grouped into clusters based on semantic similarity (e.g., user identifiers, price-related attributes, time fields).
+    \item \textbf{Invariant Extraction:} each cluster is independently analyzed to generate invariants, reducing the input length while preserving meaningful dependencies.
+\end{enumerate}
+This process ensures that invariants can be learned within the limited context capacity of small LLMs while still capturing critical relationships.
+
+\subsection{Attack Generation and Prompt Refinement Loop}
+A central challenge is that prompt quality strongly influences the detection results. Fixed prompts are brittle and may miss subtle anomalies. 
+We introduce an \emph{attack-driven refinement loop}, which improves prompts by continuously exposing them to adversarial scenarios:
+\begin{itemize}
+    \item \textbf{Attack Summarization:} using an LLM (e.g., \texttt{o3}), existing attacks are abstracted into categories such as data consistency violations, flow bypasses, or semantic integrity breaches.
+    \item \textbf{Attack Hypothesizing:} the model is prompted to propose new attacks that extend or combine these categories, enabling the discovery of novel tampering strategies.
+    \item \textbf{Prompt Adjustment:} failed detections against these attacks are used as counterexamples to refine the prompts, which are then re-evaluated. 
+\end{itemize}
+This iterative loop ensures that prompts evolve dynamically, reducing reliance on manual intervention and improving robustness over time.
+
+\subsection{End-to-End Detection Pipeline}
+The complete workflow of LightNorm consists of the following steps:
+\begin{enumerate}
+    \item \textbf{Log Collection:} raw logs from web applications are parsed into structured records. 
+    \item \textbf{Clustering and Invariant Learning:} field clustering organizes the data, and invariants are generated per cluster. 
+    \item \textbf{Adversarial Refinement:} attack generation and prompt refinement iteratively strengthen the invariants. 
+    \item \textbf{Runtime Detection:} during deployment, incoming logs are validated against the learned invariants, and violations are flagged with explanations. 
+\end{enumerate}
+This pipeline produces explainable anomaly detection that balances efficiency, coverage, and interpretability, while remaining deployable with lightweight, local models.
