@@ -51,3 +51,43 @@ To address these challenges, we propose two complementary strategies:
 \end{enumerate}
 
 This motivating example highlights both the importance of semantic invariants in API interactions and the inherent difficulties faced by small models, motivating the need for our proposed approach.
+
+\paragraph{Field Clustering with \lighttechname.}
+To overcome the context length limitation, our approach, \lighttechname, introduces a \emph{field clustering} mechanism. 
+Instead of feeding the entire long log into the model, we decompose the original log into a set of smaller clusters. 
+Each cluster groups together only the fields that are semantically comparable across APIs. 
+
+For example, in the motivating case of \texttt{cancelOrder} and \texttt{queryOrders}, the raw log is long and contains numerous nested fields. 
+\lighttechname\ automatically partitions these fields into multiple clusters:
+\begin{itemize}
+    \item \textbf{Cluster 1:} focuses on order identifiers, linking \texttt{cancelOrder.arguments.orderId} with \texttt{queryOrders.response.data.id}.
+    \item \textbf{Cluster 2:} focuses on status values, linking \texttt{cancelOrder.response.status} with \texttt{queryOrders.response.data.status}.
+    \item \textbf{Cluster 3:} focuses on user and account identity, linking \texttt{cancelOrder.arguments.loginId}, \texttt{env.user\_id}, and \texttt{queryOrders.qi.accountId}.
+\end{itemize}
+
+By processing each cluster independently, \lighttechname\ transforms one long and intractable log into multiple smaller and coherent inputs for the LLM. 
+This greatly reduces the risk of exceeding the model’s context window, while also making comparisons between related fields more explicit and interpretable. 
+
+\paragraph{Attack Generation and Prompt Refinement.}
+The second challenge concerns the limited reasoning ability of small models, which often fail to infer project-specific invariants. 
+To address this, our approach introduces an iterative loop of \emph{attack generation} and \emph{prompt refinement}, as illustrated in Figure~\ref{fig:attack_refinement}. 
+
+The core idea is to leverage large models to automatically generate targeted attack logs from normal logs. 
+These generated attacks often exploit missing invariants in the current prompt configuration. 
+By checking the invariants produced by the small model against the generated attack logs, we can identify undetected attacks. 
+These undetected cases are then fed back into a large model to refine the prompt, which is subsequently reused by the small model to regenerate invariants. 
+This iterative process allows us to gradually learn project-specific invariant patterns and to enrich the detection coverage. 
+
+For instance, in the motivating example, the attack generation step can synthesize an adversarial log where the \texttt{cancelOrder.arguments.orderId} does not appear in the order list returned by \texttt{queryOrders}. 
+If the current prompt fails to enforce this invariant, the refinement step will propose a new rule such as:
+\begin{quote}
+\emph{``Ensure that every \texttt{cancelOrder.arguments.orderId} matches one of the values in \texttt{queryOrders.response.data.id}.''}
+\end{quote}
+Once integrated, this refined prompt enables the small model to generate the correct invariant and to successfully detect the motivating attack. 
+
+\begin{figure}[t]
+    \centering
+    % \includegraphics[width=0.85\linewidth]{figures/attack_refinement.pdf}
+    \caption{Attack generation and prompt refinement loop. Large models generate targeted attacks; undetected cases are used to refine prompts, improving small-model invariant generation.}
+    \label{fig:attack_refinement}
+\end{figure}

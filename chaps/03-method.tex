@@ -14,25 +14,136 @@ Figure~\ref{fig:overview} provides an overview of the workflow.
 \end{itemize}
 This modular design allows \lighttechname to be deployed with compact, locally available models while maintaining adaptability and robustness.
 
+
 \subsection{Field Clustering for Context Reduction}
-Lightweight LLMs are constrained by limited context windows, making it infeasible to directly process lengthy, complex logs. 
-To address this, we propose \emph{field clustering}, which decomposes log entries into semantically related groups:
+Lightweight LLMs are constrained by limited context windows, making it infeasible to directly process lengthy, complex logs. To address this, we propose \emph{field clustering}, which decomposes log entries into semantically related groups, ensuring that invariants can still be extracted while fitting within the restricted input length.
+
+The process consists of three stages:
+
 \begin{enumerate}
-    \item \textbf{Log Expansion:} structured logs are parsed into fine-grained fields, such as identifiers, parameters, and state values. 
-    \item \textbf{Clustering:} fields are grouped into clusters based on semantic similarity (e.g., user identifiers, price-related attributes, time fields).
-    \item \textbf{Invariant Extraction:} each cluster is independently analyzed to generate invariants, reducing the input length while preserving meaningful dependencies.
+\item \textbf{Log Expansion.}
+Structured logs are first parsed into fine-grained fields. To formalize this process, we define a recursive grammar for data types:
+
+```
+\[
+\text{Data} := \texttt{unknown} \;|\; \texttt{bool} \;|\; \texttt{number} \;|\; \texttt{string} \;|\; \texttt{dict}[key_1:\text{Data}, key_2:\text{Data}, \ldots] \;|\; \texttt{array}[\text{Data}]
+\]  
+
+Here, \texttt{unknown} is used when the log structure cannot be precisely determined (e.g., ambiguous or inconsistent fields).  
+
+Based on this grammar, complex structures in logs (e.g., nested dictionaries or arrays) are expanded into flattened key–value pairs, following the syntactic structure of the log. We adopt the following expansion rules:  
+
+\begin{itemize}  
+    \item \textbf{Rule 1 – Dict Expansion:}  
+    For a dictionary value, each key is concatenated with its parent field using a dot “.” separator.  
+    \begin{quote}  
+    Example:  
+    \verb|"f1": { "subf1": x, "subf2": y }|  
+    expands into  
+    \verb|"f1.subf1": x, "f1.subf2": y|  
+    \end{quote}  
+
+    \item \textbf{Rule 2 – Array Expansion:}  
+    For an array of primitive values, each element is indexed by its position.  
+    \begin{quote}  
+    Example:  
+    \verb|"f2": [a, b, c]|  
+    expands into  
+    \verb|"f2[0]": a, "f2[1]": b, "f2[2]": c|  
+    \end{quote}  
+
+    \item \textbf{Rule 3 – Array of Dict Expansion:}  
+    For an array of dictionaries, each dictionary is expanded recursively using both the array index and the key.  
+    \begin{quote}  
+    Example:  
+    \verb|"f3": [ {"id": 1, "val": 10}, {"id": 2, "val": 20} ]|  
+    expands into  
+    \verb|"f3[0].id": 1, "f3[0].val": 10, "f3[1].id": 2, "f3[1].val": 20|  
+    \end{quote}  
+
+    \item \textbf{Rule 4 – Field Joining:}  
+    In certain cases, useful semantics emerge when fields from different levels of the structure can be \emph{joined}. Specifically, if an outer field and an inner field share a common key (e.g., an identifier), we extract the matching entry and promote it as a new joined field.  
+
+    \begin{quote}  
+    Example:  
+    \verb|{ "x": 1234, "y": [ {"id": 1234, "status": "success"}, {"id": 2345, "status": "failed"} ] }|  
+
+    Here, field \verb|x| can be joined with the elements of \verb|y| via the \verb|"id"| field. Since \verb|x = 1234|, we select the element of \verb|y| with \verb|"id": 1234|. The result is a new joined field:  
+
+    \verb|"y['joined']": {"id": 1234, "status": "success"}|  
+
+    This rule extracts cross-level relationships, which are otherwise hidden in nested structures, and represents them as explicit fields.  
+    \end{quote}  
+\end{itemize}  
+
+After expansion, including joining, all relevant information is expressed as flat fields, making downstream clustering and invariant extraction more effective.  
+
+\item \textbf{Clustering.}  
+After expansion, we obtain a large set of atomic fields. To manage context length, we group these fields into clusters based on semantic relatedness. Instead of manual heuristics, we directly employ an LLM for clustering: the model is prompted with the list of expanded fields and asked to output a partition of fields into clusters. For example, identifiers such as \verb|user_id|, \verb|session_id|, and joined fields with matching IDs are placed into one cluster; numerical values such as \verb|price|, \verb|amount|, and \verb|discount| form another cluster. This LLM-based approach leverages semantic knowledge to produce meaningful and task-relevant clusters.  
+
+\item \textbf{Invariant Extraction.}  
+Each cluster is independently analyzed by the LLM to derive invariants. Since each cluster is smaller than the entire log, the input length fits within the limited context window, while the invariants still capture critical dependencies among semantically related fields.  
+```
+
 \end{enumerate}
-This process ensures that invariants can be learned within the limited context capacity of small LLMs while still capturing critical relationships.
+
+Through this pipeline, long and complex logs are transformed into compact and semantically organized structures, enabling lightweight LLMs to generate invariants effectively without exceeding context limits.
+
+
 
 \subsection{Attack Generation and Prompt Refinement Loop}
-A central challenge is that prompt quality strongly influences the detection results. Fixed prompts are brittle and may miss subtle anomalies. 
-We introduce an \emph{attack-driven refinement loop}, which improves prompts by continuously exposing them to adversarial scenarios:
+A central challenge in log-based anomaly detection is that prompt quality strongly influences the detection results. Fixed prompts are brittle and may fail to capture subtle invariants, leading to missed anomalies. To address this limitation, we propose an \emph{adversarial refinement loop}, in which attack generation and prompt adjustment are tightly coupled. The loop continuously strengthens prompts by exposing them to adversarial scenarios that exploit their current weaknesses.
+
+The process unfolds in the following steps:
+
 \begin{itemize}
-    \item \textbf{Attack Summarization:} using an LLM (e.g., \texttt{o3}), existing attacks are abstracted into categories such as data consistency violations, flow bypasses, or semantic integrity breaches.
-    \item \textbf{Attack Hypothesizing:} the model is prompted to propose new attacks that extend or combine these categories, enabling the discovery of novel tampering strategies.
-    \item \textbf{Prompt Adjustment:} failed detections against these attacks are used as counterexamples to refine the prompts, which are then re-evaluated. 
+\item \textbf{Invariant Extraction:} Starting from a given prompt, we derive invariants from the normal logs. These invariants encode consistency, semantic, or structural properties of the system. However, invariants are inherently incomplete and may fail to anticipate novel forms of manipulation.
+
+```
+\item \textbf{Attack Generation:} Based on the extracted invariants and a pool of normal logs, we deliberately generate abnormal logs that are difficult for the current invariants to detect. The attack generation process is guided by the \emph{OWASP API Security Top 10}, which is one of the most authoritative industry standards for summarizing API vulnerabilities. The OWASP API Top 10 categories, updated periodically, are widely adopted by practitioners and security auditors, and they collectively cover the majority of web API attacks observed in the wild. To make the framework compatible with our log-based setting, we exclude frequency- and usage-based attacks (e.g., excessive resource consumption), which our system cannot directly model.  
+
+Next, we use an LLM (e.g., \texttt{o3}) to analyze each remaining OWASP attack category more deeply, decomposing them into finer-grained subcategories. These subcategories capture different attack semantics, such as parameter tampering, authentication bypass, or injection-style manipulations, as summarized in Table~\ref{tab:attack_types_placeholder}. Given a normal log, we randomly sample an attack category and instruct the LLM to synthesize an adversarial abnormal log that aligns with the attack’s semantics. Crucially, the generation is adversarial: the model is explicitly instructed to evade the existing invariants so that the resulting log is more challenging to detect.  
+
+\item \textbf{Dataset Construction:} The generated abnormal logs are combined with the original normal logs, forming a labeled dataset that covers both benign and adversarial scenarios. This dataset becomes the foundation for evaluating and refining the prompts.  
+
+\item \textbf{Prompt Refinement:} Instead of literal fine-tuning of model parameters, we adopt a \emph{prompt fine-tuning} process. Specifically, the current invariants are evaluated on the constructed dataset, and each false positive or false negative is fed back into an LLM to solicit a targeted refinement suggestion. The model can propose to add, modify, or delete clauses in the prompt so that the refined prompt is more robust against the observed errors. After collecting refinement suggestions across the dataset, we aggregate them into a revised prompt.  
+```
+
 \end{itemize}
-This iterative loop ensures that prompts evolve dynamically, reducing reliance on manual intervention and improving robustness over time.
+
+This iterative adversarial loop allows prompts to evolve dynamically. Each cycle expands the attack space by introducing logs that specifically target the weaknesses of the current invariants, and in turn strengthens the prompts by incorporating counterexamples. Over time, this reduces reliance on manual intervention and improves robustness against both known and novel attacks.
+
+\subsubsection{OWASP API Security Top 10 as the Basis of Attack Generation}
+To ground our attack generation process in widely recognized security standards, we adopt the \emph{OWASP API Security Top 10}. This framework, maintained by the Open Worldwide Application Security Project (OWASP), is one of the most authoritative industry references for API vulnerabilities. It is widely used by practitioners, penetration testers, and auditors as the de facto checklist for assessing the security of modern web APIs. The categories are derived from extensive industry data and community input, and they collectively cover the vast majority of real-world API attacks reported across the web.
+
+In our setting, we take the OWASP API Top 10 as a foundation for guiding attack synthesis. Since our log-based anomaly detection framework does not model traffic-level features, we exclude frequency-dependent categories (e.g., rate limiting issues, excessive resource consumption). For the remaining categories, we further refine them into subcategories using LLM-based analysis, ensuring that each attack is tailored to the log semantics of the system under study.
+
+Table~\ref{tab:owasptop10} summarizes the OWASP API Security Top 10 categories and indicates their usage in our pipeline.
+
+\begin{table}[h]
+\centering
+\caption{OWASP API Security Top 10 categories and their usage in our framework. Frequency-dependent categories are excluded.}
+\label{tab:owasptop10}
+\begin{tabular}{p{0.8cm}p{5.2cm}p{6.5cm}}
+\toprule
+\textbf{ID} & \textbf{Category} & \textbf{Usage in Our Framework} \\
+\midrule
+API1 & Broken Object Level Authorization (BOLA) &  Used – generates abnormal logs where access control invariants are bypassed. \\
+API2 & Broken Authentication &  Used – simulates login/session anomalies not captured by current invariants. \\
+API3 & Broken Object Property Level Authorization &  Used – focuses on tampering with specific fields in objects. \\
+API4 & Unrestricted Resource Consumption &  Excluded – requires modeling frequency/traffic features. \\
+API5 & Broken Function Level Authorization &  Used – abnormal logs where high-privilege functions are exposed to low-privilege actors. \\
+API6 & Unrestricted Access to Sensitive Business Flows &  Used – simulates bypasses of workflow invariants. \\
+API7 & Server-Side Request Forgery (SSRF) &  Used – generates adversarial logs where external calls are injected. \\
+API8 & Security Misconfiguration &  Used – models cases where abnormal settings or defaults appear in logs. \\
+API9 & Improper Inventory Management &  Excluded – relies on large-scale endpoint enumeration patterns. \\
+API10 & Unsafe Consumption of APIs &  Used – synthesizes abnormal logs involving unvalidated or malicious upstream data. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+By leveraging this taxonomy, our attack generation process inherits both breadth and credibility: it covers a wide spectrum of realistic API threats while remaining compatible with our log-based invariant detection setting.
+
 
 \subsection{End-to-End Detection Pipeline}
 The complete workflow of \lighttechname consists of the following steps:
