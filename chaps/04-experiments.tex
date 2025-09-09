@@ -4,15 +4,15 @@ We focus on the following research questions.
 
 \begin{enumerate}
     \item \textbf{RQ1: Overall Performance.} 
-    How effective is LightNorm in detecting web tamper attacks compared to state-of-the-art baselines and WebNorm? 
+    How effective is \lighttechname in detecting web tamper attacks compared to state-of-the-art baselines and WebNorm? 
     We evaluate its precision, recall, and F1-score on standard benchmarks.
 
     \item \textbf{RQ2: Ablation Study.} 
-    How do the core components of LightNorm contribute to its performance? 
+    How do the core components of \lighttechname contribute to its performance? 
     We conduct ablation experiments on field clustering, attack generation, and prompt refinement to measure their individual impact.
 
     \item \textbf{RQ3: Model Scalability.} 
-    How does LightNorm perform when deployed with different scales of lightweight, locally deployable LLMs? 
+    How does \lighttechname perform when deployed with different scales of lightweight, locally deployable LLMs? 
     We assess the trade-offs between detection accuracy, efficiency, and resource consumption across small, medium, and larger models.
 
     \item \textbf{RQ4: Direct Substitution.} 
@@ -22,7 +22,7 @@ We focus on the following research questions.
 
 \begin{table}
 	\centering
-	\caption{Overall evaluation of LightNorm}
+	\caption{Overall evaluation of \lighttechname}
 	\label{tab:overall-eval}
 	\begin{tabular}{l|c|c|c|c}
 		\toprule
@@ -33,7 +33,7 @@ We focus on the following research questions.
 		LogRobust~\cite{zhang2019robust}  & 0.120                                      & 0.650                                  & 0.207              & 0.540           \\
 		LogFormer~\cite{guo2024logformer} & 0.272                                      & 0.764                                  & 0.301              & 0.702           \\
 		WebNorm~\cite{liao2024detecting}  & \textbf{1.000}                             & 0.704                                  & \textbf{1.000}     & 0.750           \\
-		\textbf{LightNorm (Ours)}         & \textbf{1.000}                             & \textbf{0.760}                         & \textbf{1.000}     & \textbf{X}  \\
+		\textbf{\lighttechname (Ours)}         & \textbf{1.000}                             & \textbf{0.760}                         & \textbf{1.000}     & \textbf{X}  \\
 		\bottomrule
 	\end{tabular}
 \end{table}
@@ -46,7 +46,7 @@ We focus on the following research questions.
 		\toprule
 		\textbf{Model}                & \textbf{TrainTicket} & \textbf{NiceFish} \\
 		\midrule
-		\textbf{Original (LightNorm)} & \textbf{X}        & \textbf{X}     \\
+		\textbf{Original (\lighttechname)} & \textbf{X}        & \textbf{X}     \\
 		\midrule
 		w/o API relation prediction     & X                 & X              \\
 		w/o field clustering      & X                 & X              \\

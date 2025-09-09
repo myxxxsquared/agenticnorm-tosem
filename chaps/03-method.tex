@@ -1,20 +1,18 @@
 \section{Method}
 
-\section{Method}
-
-In this section, we present \textbf{LightNorm}, a lightweight multi-agent anomaly detection framework for web applications. 
-LightNorm is designed to overcome the limitations of prior solutions such as WebNorm, namely the reliance on heavyweight closed-source models, sensitivity to prompt engineering, and difficulty in handling long log contexts. 
+In this section, we present \textbf{\lighttechname}, a lightweight multi-agent anomaly detection framework for web applications. 
+\lighttechname is designed to overcome the limitations of prior solutions such as WebNorm, namely the reliance on heavyweight closed-source models, sensitivity to prompt engineering, and difficulty in handling long log contexts. 
 Our framework consists of three key components: (1) multi-agent architecture, (2) field clustering for context reduction, and (3) attack-driven prompt refinement for robustness. 
 Figure~\ref{fig:overview} provides an overview of the workflow.
 
 \subsection{Multi-Agent Workflow}
-LightNorm organizes the detection process into a collaborative set of agents, each specializing in a particular subtask. 
+\lighttechname organizes the detection process into a collaborative set of agents, each specializing in a particular subtask. 
 \begin{itemize}
     \item \textbf{Invariant Generation Agent:} derives candidate invariants from clustered log fields and formulates them into executable rules. 
     \item \textbf{Attack Generation Agent:} synthesizes adversarial attacks by summarizing existing tampering behaviors and hypothesizing new variants.
     \item \textbf{Prompt Refinement Agent:} evaluates invariant failures under generated attacks and iteratively improves the prompt templates to enhance coverage and detection accuracy.
 \end{itemize}
-This modular design allows LightNorm to be deployed with compact, locally available models while maintaining adaptability and robustness.
+This modular design allows \lighttechname to be deployed with compact, locally available models while maintaining adaptability and robustness.
 
 \subsection{Field Clustering for Context Reduction}
 Lightweight LLMs are constrained by limited context windows, making it infeasible to directly process lengthy, complex logs. 
@@ -37,7 +35,7 @@ We introduce an \emph{attack-driven refinement loop}, which improves prompts by 
 This iterative loop ensures that prompts evolve dynamically, reducing reliance on manual intervention and improving robustness over time.
 
 \subsection{End-to-End Detection Pipeline}
-The complete workflow of LightNorm consists of the following steps:
+The complete workflow of \lighttechname consists of the following steps:
 \begin{enumerate}
     \item \textbf{Log Collection:} raw logs from web applications are parsed into structured records. 
     \item \textbf{Clustering and Invariant Learning:} field clustering organizes the data, and invariants are generated per cluster. 
