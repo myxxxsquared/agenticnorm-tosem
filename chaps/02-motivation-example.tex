@@ -130,54 +130,53 @@ that should not be permitted. Such behavior can result in duplicate refunds and
 financial losses for the system, creating serious security and integrity risks.
 
 \paragraph{Existing Approaches}
-There are two main categories of existing approaches for detecting this type of anomaly:
-(1) \textbf{Model-learning-based detectors} that learn normal patterns from historical logs and flag deviations as anomalies; and
+There are two main categories of existing approaches for detecting anomalys in web logs:
+(1) \textbf{Model-learning-based detectors} that learn embeddings and features from both normal and abnormal logs and classify anomalies based on learned patterns; and
 (2) \textbf{Invariant-learning-based detectors} that learn semantic invariants from logs and flag violations as anomalies.
 
-Model-learning-based detectors that rely on embeddings struggle here: the abnormal and normal logs are extremely similar, differ in only a few fields, and are embedded very close in vector space.
+Model-learning-based detectors that rely on embeddings and features struggle here: the abnormal and normal logs are extremely similar, differ in only a few fields, and are embedded very close in vector space.
 Moreover, the end-to-end log sequence is long and interleaved with irrelevant events, so the anomaly signal is diluted by normal traffic.
 
 
 To address this, prior work WebNorm~\cite{webnorm} proposes to learn semantic invariants from web logs using LLMs.
-WebNorm can catch this attack by learning a \emph{cross-API data-consistency constraint}:
+WebNorm can catch this attack by learning a constraint between two APIs:
 \texttt{cancelOrder.arguments.orderId} must match one of \texttt{queryOrders.results[].id}.
 Very briefly, it maps code‐level data flows to log fields and asks an LLM to confirm such relations as invariants,
 then verifies at runtime whether the collected logs satisfy them; any mismatch is flagged as an anomaly.
-For our case, WebNorm learns the cross-API data constraint:
-\[
-    \texttt{cancelOrder.arguments.orderId} \in \texttt{queryOrders.results[].id}.
-\]
-Violation of this invariant flags the attack.
+For this motivating example, WebNorm learns the cross-API data constraint. Violation of this invariant flags the attack.
 
 Despite its effectiveness, WebNorm has three limitations:
 \begin{itemize}
     \item \textbf{Program-analysis and source-code dependence}: it requires access to and instrumentation of frontend/backed code to build log-code mappings, which is costly, brittle under rapid changes, and infeasible for closed-source or third-party components.
-    \item \textbf{Heavyweight LLMs}: constraint confirmation/synthesis relies on closed source property models, adding latency, cost, and compliance concerns, and suffering from privacy issues when sending data to remote servers.
+    \item \textbf{Heavyweight LLMs}: constraint confirmation/synthesis relies on closed source property models, adding latency, cost, and compliance concerns, and suffering from privacy issues when sending data to remote servers. The original logs are very long, often exceeding the context window of compact models, making it impossible to process them in full.
     \item \textbf{Prompt sensitivity}: the right constraint often emerges only when the prompt explicitly elicits it, leading to manual, project-specific prompt engineering with limited transferability and unstable results.
 \end{itemize}
 
-\paragraph{Our Method at a Glance}
-We aim to retain WebNorm’s \emph{consistency-constraint} power while eliminating its practical blockers.
+\paragraph{Our Approach}
+
+We aim to retain WebNorm’s \emph{consistency-constraint} power while eliminating its limitations.
 Our approach uses only logs (no source or program analysis), runs primarily with compact, locally deployable LLMs, and mitigates prompt fragility by automatically refining prompts with generated attacks.
 
-\paragraph{Step~1: Field Clustering (Context Reduction)}
-To fit compact models and make comparisons explicit, we expand the original JSON and group \emph{comparable} fields into small, semantically coherent clusters rather than feeding the full log.
-For this example, clusters include:
-(1) \emph{Order identifiers}: linking \texttt{cancelOrder.arguments.orderId} and \texttt{queryOrders.results[].id};
-(2) \emph{Statuses}: linking \texttt{cancelOrder.response.status} and \texttt{queryOrders.response.data.status};
-(3) \emph{Identity}: linking \texttt{cancelOrder.arguments.loginId}, \texttt{env.user\_id}, and \texttt{queryOrders.qi.accountId}.
-Processing each cluster separately keeps inputs short and highlights the relations the model must check.
 
-\paragraph{Step~2: Attack Generation \& Prompt Refinement (Robust Reasoning)}
-Compact models often miss cross-API relations unless stated.
-We therefore generate targeted attacks from normal logs to expose missing checks, and use those failures to \emph{automatically} refine prompts.
-Applied to our example, the generator creates a case where \texttt{cancelOrder.arguments.orderId} does not appear in \texttt{queryOrders.results[].id} (e.g., using \texttt{418ea03c}).
-If the current prompt fails, the refinement proposes an explicit rule, e.g.,
-\emph{``Ensure every \texttt{cancelOrder.arguments.orderId} matches one value in \texttt{queryOrders.results[].id}.''}
-The refined prompt is then reused by the compact model to produce the correct invariant.
 
-\paragraph{Outcome on the Example}
-Without source code or program analysis, our clustered inputs let a compact model focus on the \emph{identifier} relation;
-the attack-driven refinement injects the exact missing constraint.
-The resulting invariant blocks the tampering (rejecting \texttt{418ea03c} while allowing the legitimate \texttt{fe9c72d9}),
-achieving WebNorm-like constraint detection with lower overhead, no source dependence, and substantially reduced prompt fragility.
+% \paragraph{Step~1: Field Clustering (Context Reduction)}
+% To fit compact models and make comparisons explicit, we expand the original JSON and group \emph{comparable} fields into small, semantically coherent clusters rather than feeding the full log.
+% For this example, clusters include:
+% (1) \emph{Order identifiers}: linking \texttt{cancelOrder.arguments.orderId} and \texttt{queryOrders.results[].id};
+% (2) \emph{Statuses}: linking \texttt{cancelOrder.response.status} and \texttt{queryOrders.response.data.status};
+% (3) \emph{Identity}: linking \texttt{cancelOrder.arguments.loginId}, \texttt{env.user\_id}, and \texttt{queryOrders.qi.accountId}.
+% Processing each cluster separately keeps inputs short and highlights the relations the model must check.
+
+% \paragraph{Step~2: Attack Generation \& Prompt Refinement (Robust Reasoning)}
+% Compact models often miss cross-API relations unless stated.
+% We therefore generate targeted attacks from normal logs to expose missing checks, and use those failures to \emph{automatically} refine prompts.
+% Applied to our example, the generator creates a case where \texttt{cancelOrder.arguments.orderId} does not appear in \texttt{queryOrders.results[].id} (e.g., using \texttt{418ea03c}).
+% If the current prompt fails, the refinement proposes an explicit rule, e.g.,
+% \emph{``Ensure every \texttt{cancelOrder.arguments.orderId} matches one value in \texttt{queryOrders.results[].id}.''}
+% The refined prompt is then reused by the compact model to produce the correct invariant.
+
+% \paragraph{Outcome on the Example}
+% Without source code or program analysis, our clustered inputs let a compact model focus on the \emph{identifier} relation;
+% the attack-driven refinement injects the exact missing constraint.
+% The resulting invariant blocks the tampering (rejecting \texttt{418ea03c} while allowing the legitimate \texttt{fe9c72d9}),
+% achieving WebNorm-like constraint detection with lower overhead, no source dependence, and substantially reduced prompt fragility.
