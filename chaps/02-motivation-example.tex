@@ -1,12 +1,116 @@
-\section{Motivating Example}
+% \section{Motivating Example}
 
-To illustrate the challenges of inferring invariants from API logs, we consider an anomaly case extracted from the \trainticket dataset.
+
+% \input{floats/02-01-motivation-example}
+
+% \paragraph{Attack Process.}
+
+% As shown in Figure~\ref{fig:motivating_example}, there are two APIs involved: \texttt{/api/v1/queryOrders}  and \texttt{/api/v1/cancelOrder} .
+
+
+% \paragraph{WebNorm Detection}
+% Since the change of the log content is subtle, traditional learning based methods struggle to detect this anomaly.
+% This is because the logs are very long, only differ in a few fields, the embedding distance between normal and abnormal logs is small, and the anomaly is overwhelmed by the large amount of normal data.
+
+
+% \noindent\textbf{However, this solution comes with three major limitations that hinder practical deployment:}
+% \begin{enumerate}
+%   \item \textbf{Dependence on program analysis and source code.} 
+%   WebNorm requires access to and instrumentation of the application’s source (frontend and backend) to build the log–code mapping. 
+%   This is costly to engineer and maintain, brittle under frequent code changes, and often infeasible for closed-source components, 
+%   third-party services, or obfuscated/minified frontends—precisely where many production systems operate.
+
+%   \item \textbf{Heavyweight LLM requirement.} 
+%   Confirming and synthesizing constraints relies on large, high-capacity models. 
+%   These introduce substantial compute cost and latency, complicate on-prem or privacy-sensitive deployments, 
+%   and can raise security/compliance concerns when external APIs are involved. 
+%   Model/version drift further affects stability over time.
+
+%   \item \textbf{Prompt sensitivity and manual effort.} 
+%   The learned constraint only emerges if the prompt explicitly elicits the \emph{right} relationship; 
+%   performance is highly sensitive to prompt wording, context length, and task decomposition. 
+%   In practice this demands iterative, project-specific prompt engineering, suffers from limited transferability across systems, 
+%   and risks both false negatives (missed relations) and unstable results across model updates.
+% \end{enumerate}
+% In short, while WebNorm can discover the needed consistency constraint to stop this attack, its reliance on source-based program analysis, 
+% heavy LLMs, and prompt-fragile workflows makes robust, low-overhead adoption challenging in real-world settings.
+
+
+% Suppose a user issues two consecutive API calls: \texttt{queryOrders} to retrieve their own order history, followed by \texttt{cancelOrder} to cancel a ticket. The corresponding log entries are shown below.
+
+% A natural invariant between these two APIs is that \texttt{cancelOrder.arguments.orderId} must match one of the order identifiers returned by \texttt{queryOrders.response.data.id}. This invariant enforces that users can only cancel tickets they actually own.
+
+% In the anomaly observed in the TrainTicket dataset, however, this constraint is violated: a user is able to cancel another person’s ticket by providing an arbitrary order identifier. If deployed in a real system, such behavior could enable malicious users to obtain illegitimate refunds or disrupt other passengers’ orders. WebNorm can in principle detect this anomaly, but only if the prompt explicitly specifies the relationship that \texttt{cancelOrder.arguments.orderId} should match one of \texttt{queryOrders.response.data.id}. This highlights the difficulty of reliably capturing such invariants without manual intervention.
+
+% \paragraph{Challenges for Small Models.}
+% Automatically discovering semantic invariants from web logs is non-trivial. Small models in particular face two fundamental challenges:
+
+% \begin{itemize}
+%     \item \textbf{Challenge 1: Limited Context Capacity.}
+%           Real-world web logs are often very long due to nested JSON structures and verbose API responses. Even the motivating example can easily span hundreds of tokens, while a single \texttt{queryOrders} response may contain dozens of orders, each with multiple fields. As a result, many logs exceed the maximum context window of compact LLMs, making it impossible to process them in full. Table~\ref{tab:log_length} quantifies this issue by showing the proportion of logs that surpass both the global maximum context length and the local capacity of a high-end compact model (Gemma3-27B). Hardware memory further tightens this constraint: for instance, a 27B-parameter model running on a 49GB GPU typically supports only 16k–32k tokens, which is still insufficient for a non-negligible fraction of logs.
+
+%     \item \textbf{Challenge 2: Reliance on Prompt Engineering and Model Reasoning.}
+%           Existing approaches such as WebNorm depend heavily on carefully crafted prompts and the reasoning power of large models. In practice, small models exhibit much weaker log comprehension: they often fail to capture cross-API relationships unless the prompt explicitly spells out the attack scenario. For example, detecting that \texttt{cancelOrder.arguments.orderId} must match one of \texttt{queryOrders.response.data.id} requires stating this condition directly in the prompt; otherwise, the model cannot infer the invariant. Simply replacing the large model with a smaller one thus leads to significant drops in detection accuracy.
+% \end{itemize}
+
+% \paragraph{Our Solution.}
+% To address these challenges, we propose two complementary strategies:
+% \begin{enumerate}
+%     \item \textbf{Field Clustering.} To mitigate context length issues, we cluster comparable fields together. Instead of providing the full log, we expand the structures and extract only relevant fields for invariant inference.
+%     \item \textbf{Refined Prompts via Generated Attacks.} To strengthen reasoning, we refine prompts by leveraging automatically generated attacks. These adversarial cases expose missing invariants, which in turn help the model generalize and infer more comprehensive rules.
+% \end{enumerate}
+
+% This motivating example highlights both the importance of semantic invariants in API interactions and the inherent difficulties faced by small models, motivating the need for our proposed approach.
+
+% \paragraph{Field Clustering with \lighttechname.}
+% To overcome the context length limitation, our approach, \lighttechname, introduces a \emph{field clustering} mechanism.
+% Instead of feeding the entire long log into the model, we decompose the original log into a set of smaller clusters.
+% Each cluster groups together only the fields that are semantically comparable across APIs.
+
+% For example, in the motivating case of \texttt{cancelOrder} and \texttt{queryOrders}, the raw log is long and contains numerous nested fields.
+% \lighttechname\ automatically partitions these fields into multiple clusters:
+% \begin{itemize}
+%     \item \textbf{Cluster 1:} focuses on order identifiers, linking \texttt{cancelOrder.arguments.orderId} with \texttt{queryOrders.response.data.id}.
+%     \item \textbf{Cluster 2:} focuses on status values, linking \texttt{cancelOrder.response.status} with \texttt{queryOrders.response.data.status}.
+%     \item \textbf{Cluster 3:} focuses on user and account identity, linking \texttt{cancelOrder.arguments.loginId}, \texttt{env.user\_id}, and \texttt{queryOrders.qi.accountId}.
+% \end{itemize}
+
+% By processing each cluster independently, \lighttechname\ transforms one long and intractable log into multiple smaller and coherent inputs for the LLM.
+% This greatly reduces the risk of exceeding the model’s context window, while also making comparisons between related fields more explicit and interpretable.
+
+% \paragraph{Attack Generation and Prompt Refinement.}
+% The second challenge concerns the limited reasoning ability of small models, which often fail to infer project-specific invariants.
+% To address this, our approach introduces an iterative loop of \emph{attack generation} and \emph{prompt refinement}, as illustrated in Figure~\ref{fig:attack_refinement}.
+
+% The core idea is to leverage large models to automatically generate targeted attack logs from normal logs.
+% These generated attacks often exploit missing invariants in the current prompt configuration.
+% By checking the invariants produced by the small model against the generated attack logs, we can identify undetected attacks.
+% These undetected cases are then fed back into a large model to refine the prompt, which is subsequently reused by the small model to regenerate invariants.
+% This iterative process allows us to gradually learn project-specific invariant patterns and to enrich the detection coverage.
+
+% For instance, in the motivating example, the attack generation step can synthesize an adversarial log where the \texttt{cancelOrder.arguments.orderId} does not appear in the order list returned by \texttt{queryOrders}.
+% If the current prompt fails to enforce this invariant, the refinement step will propose a new rule such as:
+% \begin{quote}
+%     \emph{``Ensure that every \texttt{cancelOrder.arguments.orderId} matches one of the values in \texttt{queryOrders.response.data.id}.''}
+% \end{quote}
+% Once integrated, this refined prompt enables the small model to generate the correct invariant and to successfully detect the motivating attack.
+
+\begin{figure}[t]
+    \centering
+    % \includegraphics[width=0.85\linewidth]{figures/attack_refinement.pdf}
+    \caption{Attack generation and prompt refinement loop. Large models generate targeted attacks; undetected cases are used to refine prompts, improving small-model invariant generation.}
+    \label{fig:attack_refinement}
+\end{figure}
+
+\section{Motivating Example}
 
 \input{floats/02-01-motivation-example}
 
-\paragraph{Attack Process.}
 
-As shown in Figure~\ref{fig:motivating_example}, there are two APIs involved: \texttt{/api/v1/queryOrders}  and \texttt{/api/v1/cancelOrder} .
+To illustrate the challenges of detecting anomalies from API logs, we consider an anomaly case extracted from the \trainticket dataset.
+We show an attack case from \trainticket dataset and focus on two APIs that appear in its backend logs:
+\texttt{/api/v1/queryOrders} (\texttt{queryOrders}) and \texttt{/api/v1/cancelOrder} (\texttt{cancelOrder}).
+Figure~\ref{fig:attack_refinement} shows a simplified version of the relevant log entries. The full version of these logs are avialable in our anonymous artifact~\cite{agenticnorm-website}. The original logs are very long and in JSON format.
 
 In a normal ticket-cancellation workflow, the operation consists of two steps.
 First, the user invokes \texttt{/api/v1/queryOrders} (abbreviated as \texttt{queryOrders})
@@ -25,101 +129,55 @@ This allows the user to cancel a ticket they do not own, or to repeat a cancella
 that should not be permitted. Such behavior can result in duplicate refunds and
 financial losses for the system, creating serious security and integrity risks.
 
-\paragraph{WebNorm Detection}
-Since the change of the log content is subtle, traditional learning based methods struggle to detect this anomaly.
-This is because the logs are very long, only differ in a few fields, the embedding distance between normal and abnormal logs is small, and the anomaly is overwhelmed by the large amount of normal data.
+\paragraph{Existing Approaches}
+There are two main categories of existing approaches for detecting this type of anomaly:
+(1) \textbf{Model-learning-based detectors} that learn normal patterns from historical logs and flag deviations as anomalies; and
+(2) \textbf{Invariant-learning-based detectors} that learn semantic invariants from logs and flag violations as anomalies.
 
-To address this, prior work WebNorm~\cite{webnorm} proposes to learn semantic invariants from web logs using large language models (LLMs).
-WebNorm can catch this attack by learning a \emph{cross-API data-consistency constraint}: 
-\texttt{cancelOrder.arguments.orderId} must match one of \texttt{queryOrders.results[].id}. 
-Very briefly, it maps code‐level data flows to log fields and asks an LLM to confirm such relations as invariants, 
+Model-learning-based detectors that rely on embeddings struggle here: the abnormal and normal logs are extremely similar, differ in only a few fields, and are embedded very close in vector space.
+Moreover, the end-to-end log sequence is long and interleaved with irrelevant events, so the anomaly signal is diluted by normal traffic.
+
+
+To address this, prior work WebNorm~\cite{webnorm} proposes to learn semantic invariants from web logs using LLMs.
+WebNorm can catch this attack by learning a \emph{cross-API data-consistency constraint}:
+\texttt{cancelOrder.arguments.orderId} must match one of \texttt{queryOrders.results[].id}.
+Very briefly, it maps code‐level data flows to log fields and asks an LLM to confirm such relations as invariants,
 then verifies at runtime whether the collected logs satisfy them; any mismatch is flagged as an anomaly.
+For our case, WebNorm learns the cross-API data constraint:
+\[
+    \texttt{cancelOrder.arguments.orderId} \in \texttt{queryOrders.results[].id}.
+\]
+Violation of this invariant flags the attack.
 
-\noindent\textbf{However, this solution comes with three major limitations that hinder practical deployment:}
-\begin{enumerate}
-  \item \textbf{Dependence on program analysis and source code.} 
-  WebNorm requires access to and instrumentation of the application’s source (frontend and backend) to build the log–code mapping. 
-  This is costly to engineer and maintain, brittle under frequent code changes, and often infeasible for closed-source components, 
-  third-party services, or obfuscated/minified frontends—precisely where many production systems operate.
-
-  \item \textbf{Heavyweight LLM requirement.} 
-  Confirming and synthesizing constraints relies on large, high-capacity models. 
-  These introduce substantial compute cost and latency, complicate on-prem or privacy-sensitive deployments, 
-  and can raise security/compliance concerns when external APIs are involved. 
-  Model/version drift further affects stability over time.
-
-  \item \textbf{Prompt sensitivity and manual effort.} 
-  The learned constraint only emerges if the prompt explicitly elicits the \emph{right} relationship; 
-  performance is highly sensitive to prompt wording, context length, and task decomposition. 
-  In practice this demands iterative, project-specific prompt engineering, suffers from limited transferability across systems, 
-  and risks both false negatives (missed relations) and unstable results across model updates.
-\end{enumerate}
-In short, while WebNorm can discover the needed consistency constraint to stop this attack, its reliance on source-based program analysis, 
-heavy LLMs, and prompt-fragile workflows makes robust, low-overhead adoption challenging in real-world settings.
-
-
-Suppose a user issues two consecutive API calls: \texttt{queryOrders} to retrieve their own order history, followed by \texttt{cancelOrder} to cancel a ticket. The corresponding log entries are shown below.
-
-A natural invariant between these two APIs is that \texttt{cancelOrder.arguments.orderId} must match one of the order identifiers returned by \texttt{queryOrders.response.data.id}. This invariant enforces that users can only cancel tickets they actually own.
-
-In the anomaly observed in the TrainTicket dataset, however, this constraint is violated: a user is able to cancel another person’s ticket by providing an arbitrary order identifier. If deployed in a real system, such behavior could enable malicious users to obtain illegitimate refunds or disrupt other passengers’ orders. WebNorm can in principle detect this anomaly, but only if the prompt explicitly specifies the relationship that \texttt{cancelOrder.arguments.orderId} should match one of \texttt{queryOrders.response.data.id}. This highlights the difficulty of reliably capturing such invariants without manual intervention.
-
-\paragraph{Challenges for Small Models.}
-Automatically discovering semantic invariants from web logs is non-trivial. Small models in particular face two fundamental challenges:
-
+Despite its effectiveness, WebNorm has three limitations:
 \begin{itemize}
-    \item \textbf{Challenge 1: Limited Context Capacity.}
-          Real-world web logs are often very long due to nested JSON structures and verbose API responses. Even the motivating example can easily span hundreds of tokens, while a single \texttt{queryOrders} response may contain dozens of orders, each with multiple fields. As a result, many logs exceed the maximum context window of compact LLMs, making it impossible to process them in full. Table~\ref{tab:log_length} quantifies this issue by showing the proportion of logs that surpass both the global maximum context length and the local capacity of a high-end compact model (Gemma3-27B). Hardware memory further tightens this constraint: for instance, a 27B-parameter model running on a 49GB GPU typically supports only 16k–32k tokens, which is still insufficient for a non-negligible fraction of logs.
-
-    \item \textbf{Challenge 2: Reliance on Prompt Engineering and Model Reasoning.}
-          Existing approaches such as WebNorm depend heavily on carefully crafted prompts and the reasoning power of large models. In practice, small models exhibit much weaker log comprehension: they often fail to capture cross-API relationships unless the prompt explicitly spells out the attack scenario. For example, detecting that \texttt{cancelOrder.arguments.orderId} must match one of \texttt{queryOrders.response.data.id} requires stating this condition directly in the prompt; otherwise, the model cannot infer the invariant. Simply replacing the large model with a smaller one thus leads to significant drops in detection accuracy.
+    \item \textbf{Program-analysis and source-code dependence}: it requires access to and instrumentation of frontend/backed code to build log-code mappings, which is costly, brittle under rapid changes, and infeasible for closed-source or third-party components.
+    \item \textbf{Heavyweight LLMs}: constraint confirmation/synthesis relies on closed source property models, adding latency, cost, and compliance concerns, and suffering from privacy issues when sending data to remote servers.
+    \item \textbf{Prompt sensitivity}: the right constraint often emerges only when the prompt explicitly elicits it, leading to manual, project-specific prompt engineering with limited transferability and unstable results.
 \end{itemize}
 
-\paragraph{Our Solution.}
-To address these challenges, we propose two complementary strategies:
-\begin{enumerate}
-    \item \textbf{Field Clustering.} To mitigate context length issues, we cluster comparable fields together. Instead of providing the full log, we expand the structures and extract only relevant fields for invariant inference.
-    \item \textbf{Refined Prompts via Generated Attacks.} To strengthen reasoning, we refine prompts by leveraging automatically generated attacks. These adversarial cases expose missing invariants, which in turn help the model generalize and infer more comprehensive rules.
-\end{enumerate}
+\paragraph{Our Method at a Glance}
+We aim to retain WebNorm’s \emph{consistency-constraint} power while eliminating its practical blockers.
+Our approach uses only logs (no source or program analysis), runs primarily with compact, locally deployable LLMs, and mitigates prompt fragility by automatically refining prompts with generated attacks.
 
-This motivating example highlights both the importance of semantic invariants in API interactions and the inherent difficulties faced by small models, motivating the need for our proposed approach.
+\paragraph{Step~1: Field Clustering (Context Reduction)}
+To fit compact models and make comparisons explicit, we expand the original JSON and group \emph{comparable} fields into small, semantically coherent clusters rather than feeding the full log.
+For this example, clusters include:
+(1) \emph{Order identifiers}: linking \texttt{cancelOrder.arguments.orderId} and \texttt{queryOrders.results[].id};
+(2) \emph{Statuses}: linking \texttt{cancelOrder.response.status} and \texttt{queryOrders.response.data.status};
+(3) \emph{Identity}: linking \texttt{cancelOrder.arguments.loginId}, \texttt{env.user\_id}, and \texttt{queryOrders.qi.accountId}.
+Processing each cluster separately keeps inputs short and highlights the relations the model must check.
 
-\paragraph{Field Clustering with \lighttechname.}
-To overcome the context length limitation, our approach, \lighttechname, introduces a \emph{field clustering} mechanism.
-Instead of feeding the entire long log into the model, we decompose the original log into a set of smaller clusters.
-Each cluster groups together only the fields that are semantically comparable across APIs.
+\paragraph{Step~2: Attack Generation \& Prompt Refinement (Robust Reasoning)}
+Compact models often miss cross-API relations unless stated.
+We therefore generate targeted attacks from normal logs to expose missing checks, and use those failures to \emph{automatically} refine prompts.
+Applied to our example, the generator creates a case where \texttt{cancelOrder.arguments.orderId} does not appear in \texttt{queryOrders.results[].id} (e.g., using \texttt{418ea03c}).
+If the current prompt fails, the refinement proposes an explicit rule, e.g.,
+\emph{``Ensure every \texttt{cancelOrder.arguments.orderId} matches one value in \texttt{queryOrders.results[].id}.''}
+The refined prompt is then reused by the compact model to produce the correct invariant.
 
-For example, in the motivating case of \texttt{cancelOrder} and \texttt{queryOrders}, the raw log is long and contains numerous nested fields.
-\lighttechname\ automatically partitions these fields into multiple clusters:
-\begin{itemize}
-    \item \textbf{Cluster 1:} focuses on order identifiers, linking \texttt{cancelOrder.arguments.orderId} with \texttt{queryOrders.response.data.id}.
-    \item \textbf{Cluster 2:} focuses on status values, linking \texttt{cancelOrder.response.status} with \texttt{queryOrders.response.data.status}.
-    \item \textbf{Cluster 3:} focuses on user and account identity, linking \texttt{cancelOrder.arguments.loginId}, \texttt{env.user\_id}, and \texttt{queryOrders.qi.accountId}.
-\end{itemize}
-
-By processing each cluster independently, \lighttechname\ transforms one long and intractable log into multiple smaller and coherent inputs for the LLM.
-This greatly reduces the risk of exceeding the model’s context window, while also making comparisons between related fields more explicit and interpretable.
-
-\paragraph{Attack Generation and Prompt Refinement.}
-The second challenge concerns the limited reasoning ability of small models, which often fail to infer project-specific invariants.
-To address this, our approach introduces an iterative loop of \emph{attack generation} and \emph{prompt refinement}, as illustrated in Figure~\ref{fig:attack_refinement}.
-
-The core idea is to leverage large models to automatically generate targeted attack logs from normal logs.
-These generated attacks often exploit missing invariants in the current prompt configuration.
-By checking the invariants produced by the small model against the generated attack logs, we can identify undetected attacks.
-These undetected cases are then fed back into a large model to refine the prompt, which is subsequently reused by the small model to regenerate invariants.
-This iterative process allows us to gradually learn project-specific invariant patterns and to enrich the detection coverage.
-
-For instance, in the motivating example, the attack generation step can synthesize an adversarial log where the \texttt{cancelOrder.arguments.orderId} does not appear in the order list returned by \texttt{queryOrders}.
-If the current prompt fails to enforce this invariant, the refinement step will propose a new rule such as:
-\begin{quote}
-    \emph{``Ensure that every \texttt{cancelOrder.arguments.orderId} matches one of the values in \texttt{queryOrders.response.data.id}.''}
-\end{quote}
-Once integrated, this refined prompt enables the small model to generate the correct invariant and to successfully detect the motivating attack.
-
-\begin{figure}[t]
-    \centering
-    % \includegraphics[width=0.85\linewidth]{figures/attack_refinement.pdf}
-    \caption{Attack generation and prompt refinement loop. Large models generate targeted attacks; undetected cases are used to refine prompts, improving small-model invariant generation.}
-    \label{fig:attack_refinement}
-\end{figure}
+\paragraph{Outcome on the Example}
+Without source code or program analysis, our clustered inputs let a compact model focus on the \emph{identifier} relation;
+the attack-driven refinement injects the exact missing constraint.
+The resulting invariant blocks the tampering (rejecting \texttt{418ea03c} while allowing the legitimate \texttt{fe9c72d9}),
+achieving WebNorm-like constraint detection with lower overhead, no source dependence, and substantially reduced prompt fragility.
