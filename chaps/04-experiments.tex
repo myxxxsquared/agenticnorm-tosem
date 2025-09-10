@@ -3,65 +3,65 @@
 We focus on the following research questions.
 
 \begin{enumerate}
-    \item \textbf{RQ1: Overall Performance.} 
-    How effective is \lighttechname in detecting web tamper attacks compared to state-of-the-art baselines and WebNorm? 
-    We evaluate its precision, recall, and F1-score on standard benchmarks.
+	\item \textbf{RQ1: Overall Performance.}
+	      How effective is \lighttechname in detecting web tamper attacks compared to state-of-the-art baselines and WebNorm?
+	      We evaluate its precision, recall, and F1-score on standard benchmarks.
 
-    \item \textbf{RQ2: Ablation Study.} 
-    How do the core components of \lighttechname contribute to its performance? 
-    We conduct ablation experiments on field clustering, attack generation, and prompt refinement to measure their individual impact.
+	\item \textbf{RQ2: Ablation Study.}
+	      How do the core components of \lighttechname contribute to its performance?
+	      We conduct ablation experiments on field clustering, attack generation, and prompt refinement to measure their individual impact.
 
-    \item \textbf{RQ3: Model Scalability.} 
-    How does \lighttechname perform when deployed with different scales of lightweight, locally deployable LLMs? 
-    We assess the trade-offs between detection accuracy, efficiency, and resource consumption across small, medium, and larger models.
+	\item \textbf{RQ3: Model Scalability.}
+	      How does \lighttechname perform when deployed with different scales of lightweight, locally deployable LLMs?
+	      We assess the trade-offs between detection accuracy, efficiency, and resource consumption across small, medium, and larger models.
 
-    \item \textbf{RQ4: Direct Substitution.} 
-    What happens if WebNorm is directly replaced with a smaller LLM without architectural modifications? 
-    This comparison highlights the necessity of our proposed techniques over naïve model substitution.
+	\item \textbf{RQ4: Direct Substitution.}
+	      What happens if WebNorm is directly replaced with a smaller LLM without architectural modifications?
+	      This comparison highlights the necessity of our proposed techniques over naïve model substitution.
 \end{enumerate}
 
 \subsection{Experimental Setup}
 
 \noindent\textbf{Benchmarks.}
-We evaluate our approach on two widely-used benchmarks of web application logs: 
-\trainticket and \nicefish. 
-Both datasets contain normal and attack traces derived from real-world systems, 
-with injected tampering behaviors that allow controlled evaluation. 
-Following prior work, we split logs into fixed-size windows of 20 entries, 
+We evaluate our approach on two widely-used benchmarks of web application logs:
+\trainticket and \nicefish.
+Both datasets contain normal and attack traces derived from real-world systems,
+with injected tampering behaviors that allow controlled evaluation.
+Following prior work, we split logs into fixed-size windows of 20 entries,
 and assign binary labels at the window level.
 
 \noindent\textbf{Baselines.}
-To demonstrate the effectiveness of \lighttechname, 
-we compare against three categories of methods:  
-(1) \textit{learning-based baselines}, including LogRobust~\cite{zhang2019robust}, 
-LogFormer~\cite{guo2024logformer}, and RAPID FastLogAD~\cite{lin2025rapid}, 
-which rely on supervised or semi-supervised learning of log sequences;  
-(2) \textit{rule-based approaches}, represented by WebNorm~\cite{liao2024detecting}, 
-the current state-of-the-art interpretable system for normality modeling.  
+To demonstrate the effectiveness of \lighttechname,
+we compare against three categories of methods:
+(1) \textit{learning-based baselines}, including LogRobust~\cite{zhang2019robust},
+LogFormer~\cite{guo2024logformer}, and RAPID FastLogAD~\cite{lin2025rapid},
+which rely on supervised or semi-supervised learning of log sequences;
+(2) \textit{rule-based approaches}, represented by WebNorm~\cite{liao2024detecting},
+the current state-of-the-art interpretable system for normality modeling.
 These baselines cover both predictive and rule-driven paradigms in log anomaly detection.
 
 \noindent\textbf{Evaluation Metrics.}
-We adopt precision and recall as the primary metrics.  
-For windows of normal logs, if any attack is incorrectly flagged, the window is counted as a false positive (FP); otherwise it is a true negative (TN).  
-For attack-containing windows, the detection of any injected attack is considered a true positive (TP), otherwise it is a false negative (FN).  
-Formally, precision and recall are computed as  
-$\text{Precision} = \tfrac{TP}{TP + FP}$ and  
-$\text{Recall} = \tfrac{TP}{TP + FN}$.  
+We adopt precision and recall as the primary metrics.
+For windows of normal logs, if any attack is incorrectly flagged, the window is counted as a false positive (FP); otherwise it is a true negative (TN).
+For attack-containing windows, the detection of any injected attack is considered a true positive (TP), otherwise it is a false negative (FN).
+Formally, precision and recall are computed as
+$\text{Precision} = \tfrac{TP}{TP + FP}$ and
+$\text{Recall} = \tfrac{TP}{TP + FN}$.
 We also report F1-score as a harmonic mean for completeness.
 
 \noindent\textbf{LLMs Used.}
-Our framework is designed to work with lightweight, locally deployable LLMs.  
-We experiment with multiple scales of open-source models, including \texttt{gpt-oss-120b}, \texttt{gpt-oss-20b}, \texttt{gamma-20b}, and \texttt{gamma-7b}, 
-to investigate accuracy–efficiency trade-offs.  
-Notably, the resource-intensive tasks of \emph{attack generation} and \emph{prompt refinement} are offloaded to the larger \texttt{gpt-4.1} model, 
-which synthesizes novel attack cases and iteratively improves invariant prompts.  
+Our framework is designed to work with lightweight, locally deployable LLMs.
+We experiment with multiple scales of open-source models, including \texttt{gpt-oss-120b}, \texttt{gpt-oss-20b}, \texttt{gamma-20b}, and \texttt{gamma-7b},
+to investigate accuracy–efficiency trade-offs.
+Notably, the resource-intensive tasks of \emph{attack generation} and \emph{prompt refinement} are offloaded to the larger \texttt{gpt-4.1} model,
+which synthesizes novel attack cases and iteratively improves invariant prompts.
 The lightweight models then reuse these refined prompts for detection, ensuring practical deployment while maintaining broad coverage.
 
 \noindent\textbf{Implementation Details.}
-All experiments are implemented in Python. 
-We deploy local LLMs using the \texttt{vLLM} inference framework for efficient serving. 
-Our setup runs on a workstation equipped with a single NVIDIA RTX~6000 Ada Generation GPU (49{,}140\,MiB memory) 
-and an Intel(R) Xeon(R) w7-2475X CPU. 
+All experiments are implemented in Python.
+We deploy local LLMs using the \texttt{vLLM} inference framework for efficient serving.
+Our setup runs on a workstation equipped with a single NVIDIA RTX~6000 Ada Generation GPU (49{,}140\,MiB memory)
+and an Intel(R) Xeon(R) w7-2475X CPU.
 This configuration allows us to evaluate small and medium-scale models locally while reserving larger-scale reasoning (e.g., attack generation) for cloud-hosted \texttt{gpt-4.1}.
 
 
@@ -73,12 +73,12 @@ This configuration allows us to evaluate small and medium-scale models locally w
 		\toprule
 		\textbf{Model}                    & \multicolumn{2}{c|}{\textbf{TrainTicket}} & \multicolumn{2}{c}{\textbf{NiceFish}}                                        \\
 		\midrule
-		                                  & \textbf{Precision}                         & \textbf{Recall}                        & \textbf{Precision} & \textbf{Recall} \\
+		                                  & \textbf{Precision}                        & \textbf{Recall}                       & \textbf{Precision} & \textbf{Recall} \\
 		\midrule
-		LogRobust~\cite{zhang2019robust}  & 0.120                                      & 0.650                                  & 0.207              & 0.540           \\
-		LogFormer~\cite{guo2024logformer} & 0.272                                      & 0.764                                  & 0.301              & 0.702           \\
-		WebNorm~\cite{liao2024detecting}  & \textbf{1.000}                             & 0.704                                  & \textbf{1.000}     & 0.750           \\
-		\textbf{\lighttechname (Ours)}         & \textbf{1.000}                             & \textbf{0.760}                         & \textbf{1.000}     & \textbf{X}  \\
+		LogRobust~\cite{zhang2019robust}  & 0.120                                     & 0.650                                 & 0.207              & 0.540           \\
+		LogFormer~\cite{guo2024logformer} & 0.272                                     & 0.764                                 & 0.301              & 0.702           \\
+		WebNorm~\cite{liao2024detecting}  & \textbf{1.000}                            & 0.704                                 & \textbf{1.000}     & 0.750           \\
+		\textbf{\lighttechname (Ours)}    & \textbf{1.000}                            & \textbf{0.760}                        & \textbf{1.000}     & \textbf{X}      \\
 		\bottomrule
 	\end{tabular}
 \end{table}
@@ -89,13 +89,13 @@ This configuration allows us to evaluate small and medium-scale models locally w
 	\label{tab:ablation-study}
 	\begin{tabular}{l|c|c}
 		\toprule
-		\textbf{Model}                & \textbf{TrainTicket} & \textbf{NiceFish} \\
+		\textbf{Model}                     & \textbf{TrainTicket} & \textbf{NiceFish} \\
 		\midrule
-		\textbf{Original (\lighttechname)} & \textbf{X}        & \textbf{X}     \\
+		\textbf{Original (\lighttechname)} & \textbf{X}           & \textbf{X}        \\
 		\midrule
-		w/o API relation prediction     & X                 & X              \\
-		w/o field clustering      & X                 & X              \\
-		w/o prompt refinement     & X                 & X              \\
+		w/o API relation prediction        & X                    & X                 \\
+		w/o field clustering               & X                    & X                 \\
+		w/o prompt refinement              & X                    & X                 \\
 		\bottomrule
 	\end{tabular}
 \end{table}
@@ -107,14 +107,14 @@ This configuration allows us to evaluate small and medium-scale models locally w
 	\label{tab:comparing-llms}
 	\begin{tabular}{l|c|c|c|c}
 		\toprule
-		            & \multicolumn{2}{c|}{\textbf{TrainTicket}} & \multicolumn{2}{c}{\textbf{NiceFish}}                                        \\
+		             & \multicolumn{2}{c|}{\textbf{TrainTicket}} & \multicolumn{2}{c}{\textbf{NiceFish}}                                        \\
 		\cmidrule{2-5}
-		            & \textbf{Percision}                         & \textbf{Recall}                        & \textbf{Percision} & \textbf{Recall} \\
+		             & \textbf{Percision}                        & \textbf{Recall}                       & \textbf{Percision} & \textbf{Recall} \\
 		\midrule
-		gpt-oss-120b      & 1.000                                      & X                         & 1.000              & X  \\
-		gpt-oss-20b & 1.000                  & X                                  & 1.000              & X           \\
-		gamma-20b  & 1.000                                      & X                                  & 1.000              & X  \\
-		gamma-7b & 1.000                                      & X                                  & 1.000              & X  \\
+		gpt-oss-120b & 1.000                                     & X                                     & 1.000              & X               \\
+		gpt-oss-20b  & 1.000                                     & X                                     & 1.000              & X               \\
+		gamma-20b    & 1.000                                     & X                                     & 1.000              & X               \\
+		gamma-7b     & 1.000                                     & X                                     & 1.000              & X               \\
 		\bottomrule
 	\end{tabular}
 \end{table}
@@ -122,46 +122,47 @@ This configuration allows us to evaluate small and medium-scale models locally w
 \subsection{Results and Analysis}
 
 \noindent\textbf{RQ1: Overall Performance.}
-Table~\ref{tab:overall-eval} summarizes the overall comparison. 
-\lighttechname achieves the highest F1-score across both \trainticket and \nicefish.  
-Although some baselines (e.g., LogFormer, RAPID FastLogAD) obtain slightly higher recall in certain cases (e.g., X on \trainticket),  
-their precision is substantially lower (e.g., X vs.\ 1.000).  
-This imbalance indicates that these methods tend to over-predict anomalies, 
-leading to a large number of false alarms.  
-By contrast, WebNorm maintains perfect precision but suffers from limited recall (0.704 / 0.750), 
-missing many real attacks due to its reliance on fixed rule extraction.  
-\lighttechname achieves both perfect precision and consistently higher recall (0.760 / X),  
-striking a better balance and resulting in the strongest overall detection performance.  
-The difference largely stems from our design: clustering and refinement prevent overfitting to spurious correlations, 
+Table~\ref{tab:overall-eval} summarizes the overall comparison.
+\lighttechname achieves the highest F1-score across both \trainticket and \nicefish.
+Although some baselines (e.g., LogFormer, RAPID FastLogAD) obtain slightly higher recall in certain cases (e.g., X on \trainticket),
+their precision is substantially lower (e.g., X vs.\ 1.000).
+This imbalance indicates that these methods tend to over-predict anomalies,
+leading to a large number of false alarms.
+By contrast, WebNorm maintains perfect precision but suffers from limited recall (0.704 / 0.750),
+missing many real attacks due to its reliance on fixed rule extraction.
+\lighttechname achieves both perfect precision and consistently higher recall (0.760 / X),
+striking a better balance and resulting in the strongest overall detection performance.
+The difference largely stems from our design: clustering and refinement prevent overfitting to spurious correlations,
 while also covering more variants of attacks.
 
 \noindent\textbf{RQ2: Ablation Study.}
-Table~\ref{tab:ablation-study} reports the impact of removing each component.  
-All three modules contribute to performance improvements, but the effects differ in magnitude.  
-Field clustering proves most critical: without it, recall drops by X\% on \trainticket and X\% on \nicefish.  
-Prompt refinement also plays a substantial role, with X\% reduction in recall when disabled.  
-API relation prediction contributes less but remains beneficial, improving recall by X--X points.  
-We further visualize the effect of iterative refinement (Figure~X).  
-Performance improves steadily in the first X rounds, reaching the peak at round X.  
-After that, performance begins to decline.  
-This is because prompts become increasingly long in later rounds (Figure~X),  
-which reduces the effectiveness of smaller models due to context length saturation.  
+Table~\ref{tab:ablation-study} reports the impact of removing each component.
+All three modules contribute to performance improvements, but the effects differ in magnitude.
+Field clustering proves most critical: without it, recall drops by X\% on \trainticket and X\% on \nicefish.
+Prompt refinement also plays a substantial role, with X\% reduction in recall when disabled.
+API relation prediction contributes less but remains beneficial, improving recall by X--X points.
+We further visualize the effect of iterative refinement (Figure~X).
+Performance improves steadily in the first X rounds, reaching the peak at round X.
+After that, performance begins to decline.
+This is because prompts become increasingly long in later rounds (Figure~X),
+which reduces the effectiveness of smaller models due to context length saturation.
 Thus, our design implicitly reveals a trade-off between refinement depth and prompt usability.
 
-\noindent\textbf{RQ3: Model Scalability.}
-Table~\ref{tab:comparing-llms} shows results with different lightweight LLMs.  
-All four models (\texttt{gpt-oss-120b}, \texttt{gpt-oss-20b}, \texttt{gamma-20b}, \texttt{gamma-7b}) 
-achieve almost identical precision (1.000) and comparable recall (X, X, X, X).  
-This suggests that the effectiveness of \lighttechname does not depend heavily on the underlying model scale.  
-The invariants derived through our clustering and refinement strategy are robust enough to transfer across models, 
+\noindent\textbf{RQ3: Comparison between Different LLMs.}
+Table~\ref{tab:comparing-llms} shows results with different lightweight LLMs.
+All four models (\texttt{gpt-oss-120b}, \texttt{gpt-oss-20b}, \texttt{gamma-20b}, \texttt{gamma-7b})
+achieve almost identical precision (1.000) and comparable recall (X, X, X, X).
+This suggests that the effectiveness of \lighttechname does not depend heavily on the underlying model scale.
+The invariants derived through our clustering and refinement strategy are robust enough to transfer across models,
 demonstrating that smaller and more efficient LLMs can be deployed in practice without sacrificing accuracy.
 
 \noindent\textbf{RQ4: Direct Substitution.}
-To further validate our design, we directly replace WebNorm’s backbone with smaller LLMs, 
-without any of the proposed architectural modifications.  
-The performance drops sharply in both recall and overall F1 (e.g., recall X vs.\ 0.760 on \trainticket).  
-This experiment highlights that naïvely substituting large models with smaller ones is not sufficient: 
-while WebNorm works with powerful external LLMs,  
-its invariants are too brittle when scaled down.  
-By contrast, our techniques (field clustering, attack generation, and prompt refinement)  
+To further validate our design, we directly replace WebNorm’s backbone with smaller LLMs,
+without any of the proposed architectural modifications.
+The performance drops sharply in both recall and overall F1 (e.g., recall X vs.\ 0.760 on \trainticket).
+This experiment highlights that naïvely substituting large models with smaller ones is not sufficient:
+while WebNorm works with powerful external LLMs,
+its invariants are too brittle when scaled down.
+By contrast, our techniques (field clustering, attack generation, and prompt refinement)
 make small models competitive, enabling practical local deployment.
+
