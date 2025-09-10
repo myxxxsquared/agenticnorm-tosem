@@ -157,26 +157,18 @@ Despite its effectiveness, WebNorm has three limitations:
 We aim to retain WebNorm’s \emph{consistency-constraint} power while eliminating its limitations.
 Our approach uses only logs (no source or program analysis), runs primarily with compact, locally deployable LLMs, and mitigates prompt fragility by automatically refining prompts with generated attacks.
 
+To this end, we propose two techniques for anomaly detection with compact models:  
+(1) \emph{Field Clustering}: a log entity is decomposed into multiple small clusters, each containing only related and comparable fields. The large model processes one cluster at a time, which greatly alleviates the context length limitation and makes it easier to capture relationships among fields;  
+(2) \emph{Prompt Refinement via Generated Attacks}: prompts are designed to guide the LLM to automatically generate abnormal logs. These abnormal logs are then used to check whether the current prompt misses certain invariants. If omissions are found, the LLM refines the prompt, and the refined prompt is subsequently used by the compact model to regenerate invariants.
 
+\paragraph{Field Clustering}
+To fit compact models and make comparisons explicit, we expand the original JSON log entity into flatten fields, finding potential relationships and grouping comparable fields into small, semantically coherent clusters rather than feeding the full log. Figure~\ref{fig:motivating_example_clustering} illustrates this process. For each cluster, we create a separate input for the LLM to process. The clusters are designed to capture fields that should be compared or checked for consistency.
 
-% \paragraph{Step~1: Field Clustering (Context Reduction)}
-% To fit compact models and make comparisons explicit, we expand the original JSON and group \emph{comparable} fields into small, semantically coherent clusters rather than feeding the full log.
-% For this example, clusters include:
-% (1) \emph{Order identifiers}: linking \texttt{cancelOrder.arguments.orderId} and \texttt{queryOrders.results[].id};
-% (2) \emph{Statuses}: linking \texttt{cancelOrder.response.status} and \texttt{queryOrders.response.data.status};
-% (3) \emph{Identity}: linking \texttt{cancelOrder.arguments.loginId}, \texttt{env.user\_id}, and \texttt{queryOrders.qi.accountId}.
-% Processing each cluster separately keeps inputs short and highlights the relations the model must check.
+\input{floats/02-02-motivation-example-clustering}
 
-% \paragraph{Step~2: Attack Generation \& Prompt Refinement (Robust Reasoning)}
-% Compact models often miss cross-API relations unless stated.
-% We therefore generate targeted attacks from normal logs to expose missing checks, and use those failures to \emph{automatically} refine prompts.
-% Applied to our example, the generator creates a case where \texttt{cancelOrder.arguments.orderId} does not appear in \texttt{queryOrders.results[].id} (e.g., using \texttt{418ea03c}).
-% If the current prompt fails, the refinement proposes an explicit rule, e.g.,
-% \emph{``Ensure every \texttt{cancelOrder.arguments.orderId} matches one value in \texttt{queryOrders.results[].id}.''}
-% The refined prompt is then reused by the compact model to produce the correct invariant.
+\paragraph{Prompt Refinement via Generated Attacks}
 
-% \paragraph{Outcome on the Example}
-% Without source code or program analysis, our clustered inputs let a compact model focus on the \emph{identifier} relation;
-% the attack-driven refinement injects the exact missing constraint.
-% The resulting invariant blocks the tampering (rejecting \texttt{418ea03c} while allowing the legitimate \texttt{fe9c72d9}),
-% achieving WebNorm-like constraint detection with lower overhead, no source dependence, and substantially reduced prompt fragility.
+\input{floats/02-03-motivation-example-prompt}
+
+Small locally deployable models generally have limited reasoning ability, and thus require explicitly specified relationships between fields to capture their constraints. However, manually adjusted prompts are difficult to generalize across diverse scenarios. Figure~\ref{fig:motivating_example_prompt} (left) shows the original WebNorm prompt, which relies on manually crafted instructions and examples, making prompt adjustment highly labor-intensive. Such prompts struggle to incorporate project-specific constraints or cover a broader range of scenarios. When invariants are generated directly by compact models, their weak reasoning ability prevents them from capturing field-level constraints using these prompts alone. Figure~\ref{fig:motivating_example_prompt} (middle) illustrates our modified prompt, where we add new instructions that guide the LLM to generate abnormal logs. These added instructions encourage the model to reason about constraints between fields—for example, the second instruction requires checking the relationships between joined fields and their original fields, which proves effective in our motivating example by correctly identifying the necessary field matching. Figure~\ref{fig:motivating_example_prompt} (right) shows the invariant generated from the refined prompt, which successfully captures the intended field-level constraints.
+

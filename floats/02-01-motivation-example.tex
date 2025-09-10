@@ -2,6 +2,10 @@
 \begin{figure}
     \centering
     \includegraphics[width=\textwidth]{figures/motivating-example.pdf}
-    \caption{Motivating example.}
+    \caption{ A motivating example from the \trainticket dataset illustrates a ticket refund workflow, 
+where the user first retrieves a list of orders using \texttt{queryOrders} and then requests a refund through \texttt{cancelOrder}. 
+The blue highlights indicate identifiers that should match across the two APIs, while the red highlight marks an abnormal tampering, 
+where the \texttt{orderId} is replaced with a value not present in the queried list.
+    }
     \label{fig:motivating_example}
 \end{figure}
