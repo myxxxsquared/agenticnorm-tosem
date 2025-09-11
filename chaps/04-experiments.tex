@@ -67,41 +67,9 @@ This configuration allows us to evaluate small and medium-scale models locally w
 
 \input{floats/04-01-overall}
 
-\begin{table}
-	\centering
-	\caption{Ablation Study}
-	\label{tab:ablation-study}
-	\begin{tabular}{l|c|c}
-		\toprule
-		\textbf{Model}                     & \textbf{TrainTicket} & \textbf{NiceFish} \\
-		\midrule
-		\textbf{Original (\lighttechname)} & \textbf{0.92}        & \textbf{0.95}     \\
-		\midrule
-		w/o API relation prediction        & 0.67                 & 0.50              \\
-		w/o field clustering               & 0.60                 & 0.83              \\
-		w/o prompt refinement              & 0.61                 & 0.83              \\
-		\bottomrule
-	\end{tabular}
-\end{table}
+\input{floats/04-02-ablation}
 
-
-\begin{table}
-	\centering
-	\caption{Comparison of Different LLMs}
-	\label{tab:comparing-llms}
-	\begin{tabular}{l|c|c|c|c}
-		\toprule
-		             & \multicolumn{2}{c|}{\textbf{TrainTicket}} & \multicolumn{2}{c}{\textbf{NiceFish}}                                        \\
-		\cmidrule{2-5}
-		             & \textbf{Percision}                        & \textbf{Recall}                       & \textbf{Percision} & \textbf{Recall} \\
-		\midrule
-		DeepSeek-V3  & 1.00                                      & 0.86                                  & 1.00               & 0.95            \\
-		Gemma 3 4B   & 1.00                                      & 0.86                                  & 1.00               & 0.95            \\
-		GPT-OSS 20B  & 1.00                                      & 0.83                                  & 1.00               & 0.90            \\
-		GPT-OSS 120B & 1.00                                      & 0.83                                  & 1.00               & 0.95            \\
-		\bottomrule
-	\end{tabular}
-\end{table}
+\input{floats/04-03-models}
 
 \subsection{Results and Analysis}
 
