@@ -1,0 +1,18 @@
+\begin{algorithm}[t]
+    \caption{Prompt Refinement via Log-Guided Feedback}
+    \label{alg:prompt-refinement}
+    \begin{algorithmic}[1]
+        \REQUIRE Dataset $D$ containing pairs of normal logs $N$ and abnormal logs $A$
+        \REQUIRE Original prompt $P$
+        \ENSURE Refined prompt $P'$
+        \STATE $M_s \gets [\;]$ \COMMENT{Initialize list of modification suggestions}
+        \FOR{each $(N, A) \in D$}
+        \STATE $M \gets \text{LLM}(\text{``Generate modification suggestion''}, N, A, P)$
+        \COMMENT{Generate modification suggestions based on a normal--abnormal log pair}
+        \STATE $M_s.\text{append}(M)$ \COMMENT{Accumulate suggestions across all pairs}
+        \ENDFOR
+        \STATE $P' \gets \text{LLM}(\text{``Refine prompt''}, P, M_s)$
+        \COMMENT{Refine the original prompt by incorporating aggregated suggestions}
+        \RETURN $P'$
+    \end{algorithmic}
+\end{algorithm}
