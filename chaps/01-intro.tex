@@ -3,15 +3,20 @@
 
 \section{Introduction}
 
-Web applications play a critical role in modern infrastructures, supporting domains such as finance, e-commerce, and healthcare. Their reliability and security are of paramount importance. Unfortunately, web frontends are inherently manipulable: attackers can alter client-side code or parameters to bypass validations, tamper with workflows, or inject abnormal behaviors. These manipulations often manifest as subtle anomalies in backend logs, making detection both crucial and challenging. Traditional log-based anomaly detection methods, such as rule-based systems (e.g., Splunk, QRadar) and deep learning models (e.g., DeepLog, LogAnomaly, LogRobust), face three major obstacles: (1) subtle abnormalities may be indistinguishable from normal variations, (2) distribution shifts caused by evolving tamper strategies degrade model reliability, and (3) most solutions provide limited explainability, hindering root cause.
+Web applications play a critical role in modern infrastructures, supporting domains such as finance~\cite{feyen2021fintech,vukovic2025ai}, e-commerce~\cite{rahman2022revolutionizing}, and healthcare~\cite{lazakidou2009web}. Their reliability and security are of paramount importance. Unfortunately, web frontends are inherently manipulable: attackers can alter client-side code or parameters to bypass validations, tamper with workflows, or inject abnormal behaviors.
+通常情况下，web application的后端会在代码中加入权限验证等措施来防止这种对于前端的篡改，然而由于这些异常行为难以被通常的前端测试所覆盖，因此可能存在一些异常行为没有完全被后端应用程序所检测，从而导致漏洞的发生。
 
-To address these limitations, recent work introduced WebNorm, an LLM-based framework that learns semantic constraints from web logs.
+为了防止潜在的攻击行为，日志分析成为了一种有效的手段。在Web系统中，日志通常记录了客户端和服务端之间所有的交互细节，包括API调用、请求参数、响应状态等信息。通过分析这些日志，可以识别出异常的交互模式，从而发现潜在的安全威胁\cite{yen2013beehive，alam2019framework}。目前，state-of-the-art的日志分析方法主要分为两类：(1) model learning approaches that learns a predictive model from normal logs and use it to identify anomalies~\cite{acharya2007mining,lorenzoli2008automatic,walkinshaw2008inferring,pradel2009automatic,beschastnikh2011leveraging,krka2014automatic,breier2015anomaly,amar2018using,rufino2020improving,stocco2020towards,kang2019spatiotemporal,njoku2025kernel,wu2023effectiveness,lupton2021literature,alam2019framework,schneider2010synoptic}, and (2) rule learning approaches that mine logical constraints from normal logs and detect violations against them~\cite{liao2024detecting}.
+
+第一类model learning based approaches 主要通过一个深度学习模型学习正常与异常日志的行为，对于日志给出二分类\cite{du2017deeplog,brown2018recurrent}，然而这种方式往往缺乏可解释性，模型的输出结果仅为二分类结果，无法给出具体的错误原因，由于日志数量庞大，即使只有很小的false positive发生率，导致的误报也非常多，给实践部署进一步带来论难，且这种方法对于一些细微的异常行为难以捕捉\cite{no2024training}，如果攻击者的篡改行为与正常行为非常相似，模型往往难以区分，从而导致漏报。
+
+为了解决第一类方法中的弊端，第二类rule learning based approaches 主要通过挖掘日志中的逻辑约束来进行异常检测\cite{liao2024detecting}，这种方法往往具有较好的可解释性，能够给出具体的错误原因，然而现有的方法仍有下面几个弊端：
 It detects abnormalities like the \trainticket case by learning cross-API constraints (e.g., \texttt{cancelOrder.arguments.orderId} must appear in \texttt{queryOrders.results[].id}).
 While effective, \textsc{WebNorm} has three limitations:
 
 \begin{itemize}
     \item \textbf{Program-analysis and source-code dependence}: it requires access to, and instrumentation of, frontend/backend code to align logs with code-level flows, which is costly, brittle under rapid changes, and infeasible for closed-source or third-party components.
-    \item \textbf{Heavyweight LLMs}: constraint confirmation/synthesis relies on large, closed-source proprietary models, introducing latency, cost, and compliance/privacy concerns. Moreover, real logs are long and deeply nested, often exceeding the context window of compact models, further pushing deployments toward heavyweight remote models.
+    \item \textbf{Heavyweight and proprietary LLMs}: constraint confirmation/synthesis relies on large, closed-source proprietary models, introducing latency, cost, and compliance/privacy concerns. Moreover, real logs are long and deeply nested, often exceeding the context window of compact models, further pushing deployments toward heavyweight remote models.
     \item \textbf{Prompt sensitivity}: the correct constraints often emerge only when the prompt is carefully crafted, leading to manual, project-specific prompt engineering with limited transferability and unstable results.
 \end{itemize}
 

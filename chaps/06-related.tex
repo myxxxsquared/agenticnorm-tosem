@@ -1,19 +1,26 @@
 \section{Related Work}
 
+
 \paragraph{Log Anomaly Detection.}
 Early attempts at anomaly detection from logs were largely based on analyzing execution traces of systems or individual APIs, with the goal of spotting deviations from expected behaviors~\cite{ye2024spurious}. 
 Classical approaches mostly relied on manually written rules or statistical thresholds~\cite{hansen1993automated,oprea2015detection,prewett2003analyzing,rouillard2004real,roy2015perfaugur,yamanishi2005dynamic,yen2013beehive}. 
 While useful in certain domains, these methods require expert-crafted specifications and often fail to generalize across applications.
 
-With the advent of data-driven methods, researchers shifted towards models that automatically learn behavioral patterns from logs~\cite{acharya2007mining,lorenzoli2008automatic,walkinshaw2008inferring,pradel2009automatic,beschastnikh2011leveraging,krka2014automatic,breier2015anomaly,amar2018using,rufino2020improving,stocco2020towards,kang2019spatiotemporal,njoku2025kernel,wu2023effectiveness,lupton2021literature,alam2019framework,schneider2010synoptic}. 
-A large body of work in this direction adopts deep learning models to classify log sequences as normal or anomalous. Recurrent architectures have been widely explored to capture sequential dependencies~\cite{du2017deeplog,brown2018recurrent}, while CNN-based solutions exploit local contextual signals~\cite{lu2018detecting,fu2023mlog}. 
-More recent efforts employ Transformers~\cite{huang2020hitanomaly,guo2024logformer}, graph neural networks~\cite{zhang2022deeptralog}, or pretrained language models tailored for log data~\cite{guo2021logbert,han2023loggpt}. 
-Some studies further reduce labeling overhead by adopting unsupervised or semi-supervised formulations~\cite{yang2021plelog,meng2019loganomaly}. 
+With the development of machine learning, researchers began to explore learning-based approaches that automatically infer normal patterns from logs. 
+Such methods can be broadly categorized into two groups: (1) \emph{model-learning-based approaches}, which train predictive models from normal logs and use them to identify anomalies, and (2) \emph{rule-learning-based approaches}, which mine logical constraints from normal logs and detect violations against them.  
+
+Model-learning-based approaches emerged with the advent of data-driven methods, where models are trained to capture behavioral patterns directly from log data~\cite{acharya2007mining,lorenzoli2008automatic,walkinshaw2008inferring,pradel2009automatic,beschastnikh2011leveraging,krka2014automatic,breier2015anomaly,amar2018using,rufino2020improving,stocco2020towards,kang2019spatiotemporal,njoku2025kernel,wu2023effectiveness,lupton2021literature,alam2019framework,schneider2010synoptic}. 
+A large body of work in this direction adopts deep learning models to classify log sequences as normal or anomalous. 
+Recurrent architectures have been widely used to capture sequential dependencies~\cite{du2017deeplog,brown2018recurrent}, while CNN-based solutions exploit local contextual signals~\cite{lu2018detecting,fu2023mlog}. 
+Recent advances leverage Transformers~\cite{huang2020hitanomaly,guo2024logformer}, graph neural networks~\cite{zhang2022deeptralog}, or pretrained language models tailored for log data~\cite{guo2021logbert,han2023loggpt}. 
+In addition, training-free retrieval methods have been proposed to exploit pre-trained models without fine-tuning, thereby reducing training costs and emphasizing token-level semantics~\cite{no2024training}. 
+Other works focus on improving data efficiency, for example by employing pseudo anomaly generation to augment scarce training data~\cite{lin2024fastlogad} or by integrating active learning into retrieval-augmented generation frameworks for anomaly detection~\cite{duan2025eagerlog}. 
 Despite their predictive strength, these neural methods often act as black boxes, providing little insight into the root cause of anomalies and occasionally overlooking subtle yet critical deviations.
 
-A smaller set of research emphasizes explainability by constructing explicit normality constraints. The most prominent example is WebNorm~\cite{liao2024detecting}, which encodes behavioral invariants of web systems as first-order logic rules derived from logs. 
-This line of work demonstrates that logic-based reasoning can both detect anomalies and provide interpretable explanations. 
-However, WebNorm relies heavily on source code analysis and large external models, and it does not explicitly enforce the consistency between logs and their underlying data sources. 
+To address the limitations of black-box models, a complementary research direction emphasizes \emph{explainability} through rule-learning-based methods. 
+This line of work constructs explicit normality constraints that enable both anomaly detection and interpretable explanations. 
+The most prominent example is WebNorm~\cite{liao2024detecting}, which encodes behavioral invariants of web systems as first-order logic rules derived from logs. 
+While effective, WebNorm relies heavily on source code analysis and large external models, and it does not explicitly enforce the consistency between logs and their underlying data sources. 
 Our work builds on this direction, proposing techniques that refine normality inference with lightweight, deployable models and enhanced relational reasoning.
 
 \paragraph{RESTful API Security.}
@@ -31,5 +38,5 @@ While effective to some extent, these approaches face notable limitations: deep 
 WebNorm represents an important step toward explainable anomaly detection, but its reliance on heavyweight, closed-source models and program source code restricts its applicability in practice. 
 
 In contrast, our approach focuses on lightweight, locally deployable models integrated into a multi-agent framework. 
-By introducing \emph{field clustering}, we address the long-context challenge inherent in compact models, and by leveraging an iterative \emph{attack-driven prompt refinement loop}, we enable the system to self-improve without extensive manual intervention. 
+By introducing field clustering, we address the long-context challenge inherent in compact models, and by leveraging an iterative attack-driven prompt refinement loop, we enable the system to self-improve without extensive manual intervention. 
 This combination not only preserves explainability but also ensures that detection can be deployed securely and efficiently in real-world settings.
