@@ -1,4 +1,19 @@
-
 \begin{abstract}
-Web applications are increasingly vulnerable to tamper attacks, where subtle manipulations in frontend code lead to abnormal backend logs. Recent work such as WebNorm addresses this challenge by leveraging large proprietary models and source code analysis to generate invariants. However, WebNorm suffers from three limitations: (i) dependency on heavyweight, closed-source models that raise security and deployment concerns, (ii) reliance on program source code, which is often unavailable in practice, and (iii) high sensitivity to prompt engineering, requiring extensive manual intervention. In this paper, we present \lighttechname, a lightweight, locally deployable multi-agent framework for web anomaly detection. To overcome the limited context length of compact LLMs, we propose field clustering, which expands structured logs into semantically grouped fields and generates invariants within each group, effectively reducing input length while preserving critical information. To address prompt sensitivity, we design an attack-generation and prompt-refinement loop, where generated attacks iteratively guide the refinement of prompts to improve invariant quality and detection performance. Together, these components form a self-improving multi-agent workflow that reduces human involvement while achieving performance comparable to WebNorm. Experiments on widely used web application benchmarks demonstrate that \lighttechname achieves detection accuracy and explainability on par with WebNorm, while enabling efficient, secure, and practical deployment.
+Web applications support important areas such as finance, e-commerce, and healthcare, making their reliability and security of paramount importance. 
+However, web frontends are inherently manipulable, and abnormal client behaviors often evade backend checks, creating exploitable vulnerabilities. 
+Log analysis has emerged as an effective defense by capturing client-server interactions
+Two main categories of log analysis methods exist: model-learning-based approaches that train predictive models from normal logs, and rule-learning-based approaches that mine logical constraints from logs.
+However, these two categories have their limitations.
+Model-learning-based methods detect anomalies by training predictive models on normal logs, but they suffer from poor interpretability, high false positive rates, and difficulty in capturing subtle attacks. 
+Rule-learning-based methods provide stronger interpretability by extracting explicit constraints, as exemplified by WebNorm, but they rely heavily on program instrumentation, closed-source large models, and manually engineered prompts.  
+
+In this paper, we present \lighttechname, a lightweight anomaly detection framework built upon compact, locally deployable LLMs. 
+\lighttechname avoids program-analysis dependence, removes reliance on heavyweight proprietary models, and mitigates prompt fragility through three innovations: 
+(1) eliminating source-code dependence via frequency-based inter-API relation discovery, 
+(2) reducing log complexity through field clustering into semantically coherent groups, and 
+(3) iteratively refining prompts with adversarially generated abnormal logs. 
+These components are integrated into a multi-agent workflow that progressively improves anomaly detection without extensive human intervention.  
+
+We implement and evaluate \lighttechname on popular benchmarks, including TrainTicket and NiceFish. 
+Results demonstrate that \lighttechname achieves effective and interpretable anomaly detection while requiring significantly less contextual information compared to existing approaches.
 \end{abstract}
