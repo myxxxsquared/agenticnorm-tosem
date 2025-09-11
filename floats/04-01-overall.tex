@@ -1,0 +1,19 @@
+\begin{table}
+    \centering
+    \caption{Overall evaluation of \lighttechname}
+    \label{tab:overall-eval}
+    \begin{tabular}{l|c|c|c|c|c|c}
+        \toprule
+        \textbf{Model}                    & \multicolumn{3}{c|}{\textbf{TrainTicket}} & \multicolumn{3}{c}{\textbf{NiceFish}}                                                                        \\
+        \midrule
+                                          & \textbf{Precision}                        & \textbf{Recall}                       & \textbf{F1}   & \textbf{Precision} & \textbf{Recall} & \textbf{F1}   \\
+        \midrule
+        LogRobust~\cite{zhang2019robust}  & 0.12                                      & 0.65                                  & 0.20          & 0.21               & 0.54            & 0.30          \\
+        LogFormer~\cite{guo2024logformer} & 0.27                                      & 0.76                                  & 0.40          & 0.30               & 0.70            & 0.42          \\
+        RAPID~\cite{no2023rapid}          & 0.11                                      & 0.90                                  & 0.20          & 0.04               & 1.00            & 0.08          \\
+        FastLogAD~\cite{lin2024fastlogad} & 0.04                                      & 0.20                                  & 0.07          & 0.01               & 0.05            & 0.01          \\
+        WebNorm~\cite{liao2024detecting}  & 1.00                                      & 0.80                                  & 0.88          & 1.00               & 0.75            & 0.86          \\
+        \textbf{\lighttechname (Ours)}    & 1.00                                      & 0.86                                  & \textbf{0.92} & 1.00               & 0.92            & \textbf{0.95} \\
+        \bottomrule
+    \end{tabular}
+\end{table}

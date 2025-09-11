@@ -65,23 +65,7 @@ and an Intel(R) Xeon(R) w7-2475X CPU.
 This configuration allows us to evaluate small and medium-scale models locally while reserving larger-scale reasoning (e.g., attack generation) for cloud-hosted \texttt{gpt-4.1}.
 
 
-\begin{table}
-	\centering
-	\caption{Overall evaluation of \lighttechname}
-	\label{tab:overall-eval}
-	\begin{tabular}{l|c|c|c|c}
-		\toprule
-		\textbf{Model}                    & \multicolumn{2}{c|}{\textbf{TrainTicket}} & \multicolumn{2}{c}{\textbf{NiceFish}}                                        \\
-		\midrule
-		                                  & \textbf{Precision}                        & \textbf{Recall}                       & \textbf{Precision} & \textbf{Recall} \\
-		\midrule
-		LogRobust~\cite{zhang2019robust}  & 0.120                                     & 0.650                                 & 0.207              & 0.540           \\
-		LogFormer~\cite{guo2024logformer} & 0.272                                     & 0.764                                 & 0.301              & 0.702           \\
-		WebNorm~\cite{liao2024detecting}  & \textbf{1.000}                            & 0.704                                 & \textbf{1.000}     & 0.750           \\
-		\textbf{\lighttechname (Ours)}    & \textbf{1.000}                            & \textbf{0.760}                        & \textbf{1.000}     & \textbf{X}      \\
-		\bottomrule
-	\end{tabular}
-\end{table}
+\input{floats/04-01-overall}
 
 \begin{table}
 	\centering
@@ -91,11 +75,11 @@ This configuration allows us to evaluate small and medium-scale models locally w
 		\toprule
 		\textbf{Model}                     & \textbf{TrainTicket} & \textbf{NiceFish} \\
 		\midrule
-		\textbf{Original (\lighttechname)} & \textbf{X}           & \textbf{X}        \\
+		\textbf{Original (\lighttechname)} & \textbf{0.92}        & \textbf{0.95}     \\
 		\midrule
-		w/o API relation prediction        & X                    & X                 \\
-		w/o field clustering               & X                    & X                 \\
-		w/o prompt refinement              & X                    & X                 \\
+		w/o API relation prediction        & 0.67                 & 0.50              \\
+		w/o field clustering               & 0.60                 & 0.83              \\
+		w/o prompt refinement              & 0.61                 & 0.83              \\
 		\bottomrule
 	\end{tabular}
 \end{table}
@@ -111,10 +95,10 @@ This configuration allows us to evaluate small and medium-scale models locally w
 		\cmidrule{2-5}
 		             & \textbf{Percision}                        & \textbf{Recall}                       & \textbf{Percision} & \textbf{Recall} \\
 		\midrule
-		gpt-oss-120b & 1.000                                     & X                                     & 1.000              & X               \\
-		gpt-oss-20b  & 1.000                                     & X                                     & 1.000              & X               \\
-		gamma-20b    & 1.000                                     & X                                     & 1.000              & X               \\
-		gamma-7b     & 1.000                                     & X                                     & 1.000              & X               \\
+		DeepSeek-V3  & 1.00                                      & 0.86                                  & 1.00               & 0.95            \\
+		Gemma 3 4B   & 1.00                                      & 0.86                                  & 1.00               & 0.95            \\
+		GPT-OSS 20B  & 1.00                                      & 0.83                                  & 1.00               & 0.90            \\
+		GPT-OSS 120B & 1.00                                      & 0.83                                  & 1.00               & 0.95            \\
 		\bottomrule
 	\end{tabular}
 \end{table}
