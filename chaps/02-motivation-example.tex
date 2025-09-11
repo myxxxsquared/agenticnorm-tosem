@@ -2,69 +2,81 @@
 
 \input{floats/02-01-motivation-example}
 
+To illustrate the challenges of detecting anomalies from API logs, we examine a case from the \trainticket dataset~\cite{trainticketsystem} involving a compromised ticket refund process. 
+We focus on two backend APIs that appear in the logs: 
+\texttt{/api/v1/queryOrders} (\texttt{queryOrders}) and \texttt{/api/v1/cancelOrder} (\texttt{cancelOrder}). 
+Figure~\ref{fig:motivating_example} shows a simplified version of the relevant log entries, while the complete logs are provided in our anonymous artifact~\cite{agenticnorm-website}. The original logs are lengthy and represented in JSON format.  
 
-To illustrate the challenges of detecting anomalies from API logs, we consider an anomaly case extracted from the \trainticket dataset.
-We show an attack case from \trainticket dataset and focus on two APIs that appear in its backend logs:
-\texttt{/api/v1/queryOrders} (\texttt{queryOrders}) and \texttt{/api/v1/cancelOrder} (\texttt{cancelOrder}).
-Figure~\ref{fig:attack_refinement} shows a simplified version of the relevant log entries. The full version of these logs are avialable in our anonymous artifact~\cite{agenticnorm-website}. The original logs are very long and in JSON format.
+In a normal cancellation workflow, the operation consists of two steps. 
+First, the user invokes \texttt{queryOrders} to retrieve a list of refundable tickets. 
+Second, the user selects one of the returned tickets and issues a cancellation request via \texttt{cancelOrder}. 
+In this case, the \texttt{orderId} used for cancellation (e.g., \texttt{fe9c72d9}) must be one of the identifiers returned by \texttt{queryOrders}.  
 
-In a normal ticket-cancellation workflow, the operation consists of two steps.
-First, the user invokes \texttt{/api/v1/queryOrders} (abbreviated as \texttt{queryOrders})
-to retrieve the list of refundable tickets.
-Second, the user selects one of the returned tickets and issues a cancellation request
-through \texttt{/api/v1/cancelOrder} (abbreviated as \texttt{cancelOrder}).
-In this normal case, the \texttt{orderId} chosen for cancellation (e.g., \texttt{fe9c72d9})
-must come from the list returned by \texttt{queryOrders}.
-
-However, because the frontend code is executed entirely on the client side,
-a malicious user can tamper with the browser data and craft an unauthorized request.
-For example, the attacker may replace the legitimate \texttt{orderId}
-(\texttt{fe9c72d9}) with an arbitrary identifier not present in the queried list
-(e.g., \texttt{418ea03c}).
-This allows the user to cancel a ticket they do not own, or to repeat a cancellation
-that should not be permitted. Such behavior can result in duplicate refunds and
-financial losses for the system, creating serious security and integrity risks.
-
-\paragraph{Existing Approaches}
-There are two main categories of existing approaches for detecting anomalys in web logs:
-(1) \textbf{Model-learning-based detectors} that learn embeddings and features from both normal and abnormal logs and classify anomalies based on learned patterns; and
-(2) \textbf{Invariant-learning-based detectors} that learn semantic invariants from logs and flag violations as anomalies.
-
-Model-learning-based detectors that rely on embeddings and features struggle here: the abnormal and normal logs are extremely similar, differ in only a few fields, and are embedded very close in vector space.
-Moreover, the end-to-end log sequence is long and interleaved with irrelevant events, so the anomaly signal is diluted by normal traffic.
+However, because frontend code executes entirely on the client side, a malicious user can tamper with browser data and craft an unauthorized request. 
+For instance, the attacker may replace the legitimate \texttt{orderId} with an arbitrary identifier not included in the queried list (e.g., \texttt{418ea03c}). 
+This manipulation allows the attacker to cancel a ticket they do not own or repeat a cancellation that should be disallowed. 
+Such behavior may lead to duplicate refunds and financial losses, creating serious risks for system security and integrity.  
 
 
-To address this, prior work WebNorm~\cite{webnorm} proposes to learn semantic invariants from web logs using LLMs.
-WebNorm can catch this attack by learning a constraint between two APIs:
-\texttt{cancelOrder.arguments.orderId} must match one of \texttt{queryOrders.results[].id}.
-Very briefly, it maps code‐level data flows to log fields and asks an LLM to confirm such relations as invariants,
-then verifies at runtime whether the collected logs satisfy them; any mismatch is flagged as an anomaly.
-For this motivating example, WebNorm learns the cross-API data constraint. Violation of this invariant flags the attack.
+\subsection{Background}
+Here, we briefly introduce the concepts of APIs and logs in web applications, and illustrate them with the example in Figure~\ref{fig:motivating_example}.  
+An API serves as the communication interface between the frontend and backend, typically specified by a request path and a payload format. 
+ In this example, there are two APIs. The first API, \texttt{queryOrders}, returns a list of refundable tickets, each with a unique \texttt{orderId}. The second API, \texttt{cancelOrder}, takes an \texttt{orderId} as input to process a cancellation request.
 
-Despite its effectiveness, WebNorm has three limitations:
+A log records the actual data exchanged through an API call, usually including the request path and a JSON-structured object for both request and response.
+Thus, logs are often stored in structured JSON format.  
+In the given example, for each API, we show its corresponding log entry in a simplified format.
+
+For anomaly detection, we consider two types of logs: normal and abnormal.
+Logs generated by normal browser operations are considered benign, while those modified or replayed on the client side are treated as abnormal.
+
+In a normal case, the second API, \texttt{cancelOrder}, should use one of these \texttt{orderId}s when submitting a cancellation request (e.g., \texttt{fe9c72d9}), this invariant is enforced by the frontend code.
+However, an attacker may tamper with the frontend and replace this value with an arbitrary \texttt{orderId} not included in the list (e.g., \texttt{418ea03c}), thereby cancelling a ticket they do not own.  
+
+The relation that \texttt{cancelOrder.arguments.orderId} must match one of \texttt{queryOrders.results[].id} is an example of a cross-API dependency. 
+WebNorm refers to such relations as \emph{dependencies} and identifies them through program analysis, source code instrumentation, or other static/dynamic methods. 
+Once the dependency is known, any violation of it in the logs can be flagged as abnormal behavior.
+
+\subsection{Existing Approaches}  
+Existing log-based anomaly detection methods can be divided into two categories:  
+(1) \textbf{Model-learning-based detectors}, which learn embeddings or features from normal and abnormal logs and classify anomalies based on learned patterns; and  
+(2) \textbf{Invariant-learning-based detectors}, which derive semantic invariants from logs and flag violations as anomalies.  
+
+Model-learning-based detectors face difficulties in this scenario. Normal and abnormal logs differ in only a few fields, making them nearly indistinguishable in embedding space. 
+Moreover, the anomaly signal is diluted by long sequences interleaved with irrelevant events, further reducing detection accuracy.  
+
+To address these issues, WebNorm~\cite{liao2024detecting} learns semantic invariants from logs using LLMs. 
+For example, it can capture the constraint that \texttt{cancelOrder.arguments.orderId} must match one of \texttt{queryOrders.results[].id}. 
+WebNorm maps code-level data flows to log fields and asks an LLM to validate them as invariants. At runtime, any violation of such constraints is flagged as an anomaly.  
+In this motivating case, WebNorm successfully identifies the cross-API constraint and detects the abnormal behavior.  
+
+Despite its effectiveness, WebNorm has three key limitations:  
 \begin{itemize}
-    \item \textbf{Program-analysis and source-code dependence}: it requires access to and instrumentation of frontend/backed code to build log-code mappings, which is costly, brittle under rapid changes, and infeasible for closed-source or third-party components.
-    \item \textbf{Heavyweight LLMs}: constraint confirmation/synthesis relies on closed source property models, adding latency, cost, and compliance concerns, and suffering from privacy issues when sending data to remote servers. The original logs are very long, often exceeding the context window of compact models, making it impossible to process them in full.
-    \item \textbf{Prompt sensitivity}: the right constraint often emerges only when the prompt explicitly elicits it, leading to manual, project-specific prompt engineering with limited transferability and unstable results.
-\end{itemize}
+    \item \textbf{Dependence on program analysis and source code}: it requires access to and instrumentation of frontend/backend code to align logs with program workflows, which is costly, fragile under rapid iteration, and infeasible for closed-source or third-party systems.  
+    \item \textbf{Reliance on heavyweight proprietary LLMs}: invariant synthesis depends on closed-source remote models, leading to latency, cost, and compliance/privacy concerns. Real logs are long and deeply nested, often exceeding the context window of compact models.  
+    \item \textbf{Prompt sensitivity}: correct invariants often emerge only when carefully engineered prompts are used, making the process labor-intensive, project-specific, and difficult to generalize.  
+\end{itemize}  
 
-\paragraph{Our Approach}
+\subsection{Our Approach}  
+We aim to preserve WebNorm’s strength in capturing \emph{consistency constraints} while addressing its limitations. 
+Our approach uses only logs (no program analysis), relies primarily on compact, locally deployable LLMs, and mitigates prompt fragility by automatically refining prompts with generated abnormal logs.  
 
-We aim to retain WebNorm’s \emph{consistency-constraint} power while eliminating its limitations.
-Our approach uses only logs (no source or program analysis), runs primarily with compact, locally deployable LLMs, and mitigates prompt fragility by automatically refining prompts with generated attacks.
+Specifically, we propose two techniques for anomaly detection with compact models:  
+(1) \emph{Field Clustering}: log entities are expanded into flattened fields and grouped into small, semantically coherent clusters. Each cluster is processed separately by the LLM, reducing context length and highlighting field-level relationships; and  
+(2) \emph{Prompt Refinement via Generated Attacks}: prompts are designed to guide the LLM to generate abnormal logs. These logs reveal missing constraints, which are then used to refine the prompts. The refined prompts enable compact models to generate more accurate invariants.  
 
-To this end, we propose two techniques for anomaly detection with compact models:  
-(1) \emph{Field Clustering}: a log entity is decomposed into multiple small clusters, each containing only related and comparable fields. The large model processes one cluster at a time, which greatly alleviates the context length limitation and makes it easier to capture relationships among fields;  
-(2) \emph{Prompt Refinement via Generated Attacks}: prompts are designed to guide the LLM to automatically generate abnormal logs. These abnormal logs are then used to check whether the current prompt misses certain invariants. If omissions are found, the LLM refines the prompt, and the refined prompt is subsequently used by the compact model to regenerate invariants.
+\paragraph{Field Clustering}  
+To handle compact models efficiently, we expand each JSON log into flattened fields and group comparable fields into clusters. 
+Figure~\ref{fig:motivating_example_clustering} illustrates this process. Each cluster is provided as a separate input to the LLM, ensuring that semantically related fields are explicitly compared.  
 
-\paragraph{Field Clustering}
-To fit compact models and make comparisons explicit, we expand the original JSON log entity into flatten fields, finding potential relationships and grouping comparable fields into small, semantically coherent clusters rather than feeding the full log. Figure~\ref{fig:motivating_example_clustering} illustrates this process. For each cluster, we create a separate input for the LLM to process. The clusters are designed to capture fields that should be compared or checked for consistency.
+\input{floats/02-02-motivation-example-clustering}  
 
-\input{floats/02-02-motivation-example-clustering}
+\paragraph{Prompt Refinement via Generated Attacks}  
 
-\paragraph{Prompt Refinement via Generated Attacks}
+\input{floats/02-03-motivation-example-prompt}  
 
-\input{floats/02-03-motivation-example-prompt}
-
-Small locally deployable models generally have limited reasoning ability, and thus require explicitly specified relationships between fields to capture their constraints. However, manually adjusted prompts are difficult to generalize across diverse scenarios. Figure~\ref{fig:motivating_example_prompt} (left) shows the original WebNorm prompt, which relies on manually crafted instructions and examples, making prompt adjustment highly labor-intensive. Such prompts struggle to incorporate project-specific constraints or cover a broader range of scenarios. When invariants are generated directly by compact models, their weak reasoning ability prevents them from capturing field-level constraints using these prompts alone. Figure~\ref{fig:motivating_example_prompt} (middle) illustrates our modified prompt, where we add new instructions that guide the LLM to generate abnormal logs. These added instructions encourage the model to reason about constraints between fields—for example, the second instruction requires checking the relationships between joined fields and their original fields, which proves effective in our motivating example by correctly identifying the necessary field matching. Figure~\ref{fig:motivating_example_prompt} (right) shows the invariant generated from the refined prompt, which successfully captures the intended field-level constraints.
-
+Compact models often lack reasoning power and cannot reliably infer constraints from fixed prompts. 
+Manually adjusting prompts is both labor-intensive and project-specific. 
+Figure~\ref{fig:motivating_example_prompt} (left) shows the original WebNorm prompt, which depends on handcrafted instructions. 
+Our approach (middle) enhances the prompt by adding instructions that guide the model to generate abnormal logs. These generated logs help the model reason about field relationships—for example, ensuring consistency between joined fields and their originals. 
+As shown in Figure~\ref{fig:motivating_example_prompt} (right), the refined prompt enables the model to produce invariants that successfully capture the intended field-level constraints.
