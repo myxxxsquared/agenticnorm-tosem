@@ -30,7 +30,7 @@ This iterative adversarial loop allows prompts to evolve dynamically. Each cycle
 \input{floats/03-02-method-constraintlearning.tex}
 
 \lighttechname generally follows the idea of WebNorm, but differs in that it does not rely on source code or data-flow analysis.
-Figure~\ref{fig:constraint_learning} illustrates the process of constraint learning.
+Figure~\ref{fig:method_constraint} illustrates the process of constraint learning.
 This requires us to replace several of its original components.
 First, \lighttechname discovers relationships between APIs through frequency-based analysis.
 Next, to adapt to lightweight LLMs, \lighttechname applies \emph{Field Clustering}, which reduce the length of the input context per query, thereby lowering the workload of the model while improving its ability to identify constraints.
