@@ -3,37 +3,35 @@
 
 \section{Introduction}
 
-Web applications play a critical role in modern infrastructures, supporting domains such as finance~\cite{feyen2021fintech,vukovic2025ai}, e-commerce~\cite{rahman2022revolutionizing}, and healthcare~\cite{lazakidou2009web}. Their reliability and security are of paramount importance. Unfortunately, web frontends are inherently manipulable: attackers can alter client-side code or parameters to bypass validations, tamper with workflows, or inject abnormal behaviors.
-通常情况下，web application的后端会在代码中加入权限验证等措施来防止这种对于前端的篡改，然而由于这些异常行为难以被通常的前端测试所覆盖，因此可能存在一些异常行为没有完全被后端应用程序所检测，从而导致漏洞的发生。
+Web applications play a critical role in modern infrastructures, supporting domains such as finance~\cite{feyen2021fintech,vukovic2025ai}, e-commerce~\cite{rahman2022revolutionizing}, and healthcare~\cite{lazakidou2009web}. Their reliability and security are of paramount importance. Unfortunately, web frontends are inherently manipulable: attackers can alter client-side code or parameters to bypass validations, tamper with workflows, or inject abnormal behaviors.  
 
-为了防止潜在的攻击行为，日志分析成为了一种有效的手段。在Web系统中，日志通常记录了客户端和服务端之间所有的交互细节，包括API调用、请求参数、响应状态等信息。通过分析这些日志，可以识别出异常的交互模式，从而发现潜在的安全威胁\cite{yen2013beehive，alam2019framework}。目前，state-of-the-art的日志分析方法主要分为两类：(1) model learning approaches that learns a predictive model from normal logs and use it to identify anomalies~\cite{acharya2007mining,lorenzoli2008automatic,walkinshaw2008inferring,pradel2009automatic,beschastnikh2011leveraging,krka2014automatic,breier2015anomaly,amar2018using,rufino2020improving,stocco2020towards,kang2019spatiotemporal,njoku2025kernel,wu2023effectiveness,lupton2021literature,alam2019framework,schneider2010synoptic}, and (2) rule learning approaches that mine logical constraints from normal logs and detect violations against them~\cite{liao2024detecting}.
+In principle, backend applications implement authorization checks and other safeguards to prevent such manipulations. However, because abnormal behaviors are often difficult to exhaustively cover through conventional frontend testing, certain anomalous actions may escape detection by the backend, leaving exploitable vulnerabilities.  
 
-第一类model learning based approaches 主要通过一个深度学习模型学习正常与异常日志的行为，对于日志给出二分类\cite{du2017deeplog,brown2018recurrent}，然而这种方式往往缺乏可解释性，模型的输出结果仅为二分类结果，无法给出具体的错误原因，由于日志数量庞大，即使只有很小的false positive发生率，导致的误报也非常多，给实践部署进一步带来论难，且这种方法对于一些细微的异常行为难以捕捉\cite{no2024training}，如果攻击者的篡改行为与正常行为非常相似，模型往往难以区分，从而导致漏报。
+To mitigate such risks, log analysis has become an effective defense mechanism. Logs in web systems typically record detailed interactions between clients and servers, including API calls, request parameters, and response statuses. Analyzing these logs enables the identification of anomalous interaction patterns that may signal security threats~\cite{yen2013beehive,alam2019framework}. Current state-of-the-art log analysis methods can be broadly classified into two categories: (1) \emph{model-learning-based approaches}, which train predictive models from normal logs and use them to detect anomalies~\cite{acharya2007mining,lorenzoli2008automatic,walkinshaw2008inferring,pradel2009automatic,beschastnikh2011leveraging,krka2014automatic,breier2015anomaly,amar2018using,rufino2020improving,stocco2020towards,kang2019spatiotemporal,njoku2025kernel,wu2023effectiveness,lupton2021literature,alam2019framework,schneider2010synoptic}, and (2) \emph{rule-learning-based approaches}, which mine logical constraints from logs and detect violations~\cite{liao2024detecting}.  
 
-为了解决第一类方法中的弊端，第二类rule learning based approaches 主要通过挖掘日志中的逻辑约束来进行异常检测\cite{liao2024detecting}，这种方法往往具有较好的可解释性，能够给出具体的错误原因，然而现有的方法仍有下面几个弊端：
-It detects abnormalities like the \trainticket case by learning cross-API constraints (e.g., \texttt{cancelOrder.arguments.orderId} must appear in \texttt{queryOrders.results[].id}).
-While effective, \textsc{WebNorm} has three limitations:
+The first category, model-learning-based approaches, typically employ deep learning models to classify logs as normal or abnormal~\cite{du2017deeplog,brown2018recurrent}. While effective in many scenarios, these approaches suffer from limited interpretability: the output is often a binary decision without clear explanations of the underlying cause. Given the large volume of logs in practice, even a small false positive rate can result in overwhelming numbers of alerts, complicating deployment. Moreover, these methods often struggle to detect subtle anomalies~\cite{no2024training}; when malicious modifications closely mimic normal behaviors, the models tend to misclassify them, leading to missed detections.  
 
-\begin{itemize}
-    \item \textbf{Program-analysis and source-code dependence}: it requires access to, and instrumentation of, frontend/backend code to align logs with code-level flows, which is costly, brittle under rapid changes, and infeasible for closed-source or third-party components.
-    \item \textbf{Heavyweight and proprietary LLMs}: constraint confirmation/synthesis relies on large, closed-source proprietary models, introducing latency, cost, and compliance/privacy concerns. Moreover, real logs are long and deeply nested, often exceeding the context window of compact models, further pushing deployments toward heavyweight remote models.
-    \item \textbf{Prompt sensitivity}: the correct constraints often emerge only when the prompt is carefully crafted, leading to manual, project-specific prompt engineering with limited transferability and unstable results.
-\end{itemize}
-
-In this paper, we propose \lighttechname, a lightweight anomaly detection framework designed around compact, locally deployable LLMs. 
-Unlike WebNorm, \lighttechname avoids program-analysis dependence, removes the need for heavyweight proprietary models, and mitigates prompt fragility through two key techniques:
+To address these limitations, rule-learning-based approaches attempt to extract explicit logical constraints from logs and use them for anomaly detection~\cite{liao2024detecting}. Such approaches provide better interpretability, as the violated constraint reveals the concrete reason for detection. For example, WebNorm detects anomalies like the \trainticket case by learning cross-API constraints (e.g., \texttt{cancelOrder.arguments.orderId} must appear in \texttt{queryOrders.results[].id}). Despite its effectiveness, however, WebNorm suffers from three critical limitations:  
 
 \begin{itemize}
-    \item \textbf{Eliminating source-code dependence.} Instead of relying on program instrumentation to build log-code mappings, \lighttechname directly learns constraints from raw logs. It discovers inter-API relationships using frequency-based analysis of co-occurring calls, and derives constraints purely from runtime behaviors, making the framework applicable even when source code is unavailable.
-    \item \textbf{Field Clustering for Context Reduction.} To overcome the limitation of compact models on long and nested logs, \lighttechname expands JSON entities into flattened fields and groups them into semantically coherent clusters. Each cluster is processed independently, greatly reducing the context length while preserving meaningful comparisons. This enables lightweight models to handle large-scale logs without resorting to heavyweight remote LLMs.
-    \item \textbf{Prompt Refinement via Generated Abnormals.} To address the fragility of manual prompt engineering, \lighttechname introduces an iterative loop where adversarial logs are automatically generated to expose missing constraints. These logs are then used to refine prompts, producing project-specific instructions that are stable and transferable across iterations. This process allows compact models to progressively capture more accurate and robust constraints without human-crafted prompts.
-\end{itemize}
+    \item \textbf{Dependence on program analysis and source code}: it requires access to frontend/backend code and additional instrumentation to align logs with code-level workflows, which is costly, brittle under rapid iteration, and infeasible for closed-source or third-party components.  
+    \item \textbf{Reliance on heavyweight proprietary LLMs}: constraint confirmation and synthesis depend on large closed-source models, which introduce latency, cost, and compliance/privacy risks. Furthermore, real logs are long and deeply nested, often exceeding the context windows of compact models and forcing reliance on heavyweight remote services.  
+    \item \textbf{Prompt sensitivity}: generating correct constraints often requires carefully crafted prompts. This results in project-specific manual engineering with poor transferability and unstable outcomes.  
+\end{itemize}  
 
-\lighttechname integrates these components into a multi-agent workflow, where agents for invariant generation, attack generation, and prompt refinement cooperate iteratively. The result is a system that adapts and self-improves without extensive human involvement.
+In this paper, we propose \lighttechname, a lightweight anomaly detection framework designed around compact, locally deployable LLMs. Unlike WebNorm, \lighttechname avoids dependence on program analysis, removes the need for heavyweight proprietary models, and mitigates prompt fragility through three key techniques:  
 
-\paragraph{Contributions.} This paper makes the following contributions:
 \begin{itemize}
-    \item We propose \lighttechname, a multi-agent framework for web anomaly detection that eliminates the dependency on application source code.
+    \item \textbf{Eliminating source-code dependence.} Instead of relying on program instrumentation to build log–code mappings, \lighttechname directly infers constraints from raw logs. It discovers inter-API relationships using frequency-based analysis of co-occurring calls and derives constraints purely from runtime behaviors, enabling applicability even when source code is unavailable.  
+    \item \textbf{Field clustering for context reduction.} To overcome compact models’ limitations on long and nested logs, \lighttechname expands JSON entities into flattened fields and groups them into semantically coherent clusters. Each cluster is processed independently, greatly reducing context length while preserving meaningful comparisons. This allows lightweight models to handle large-scale logs without resorting to heavyweight external LLMs.  
+    \item \textbf{Prompt refinement via generated abnormals.} To address prompt fragility, \lighttechname introduces an iterative loop where adversarial logs are automatically generated to expose missing constraints. These logs guide the refinement of prompts, producing project-specific instructions that are both stable and transferable across iterations. This enables compact models to progressively capture robust invariants without manual prompt engineering.  
+\end{itemize}  
+
+\lighttechname integrates these components into a multi-agent workflow, where agents for invariant generation, attack generation, and prompt refinement cooperate iteratively. The result is a system that adapts and self-improves with minimal human intervention.  
+
+\paragraph{Contributions.} This paper makes the following contributions:  
+\begin{itemize}
+    \item We propose \lighttechname, a multi-agent framework for web anomaly detection that eliminates dependency on application source code.  
     \item We implement the \lighttechname framework and evaluate it on real-world benchmarks, including TrainTicket and NiceFish.  
-    \item Experimental results demonstrate that \lighttechname requires less contextual information while achieving more effective anomaly detection compared to existing approaches.
-\end{itemize}
+    \item Experimental results show that \lighttechname achieves more effective anomaly detection with reduced contextual requirements compared to existing approaches.  
+\end{itemize}  
