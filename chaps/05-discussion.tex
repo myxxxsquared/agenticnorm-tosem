@@ -6,7 +6,7 @@
 
 Adversarial attacks play a crucial role in refining the prompts used for invariant generation. At the initial stage (Round 0), the prompt may fail to capture critical invariants, leading to missed detections for certain types of tamper attacks. However, when we introduce adversarial attacks that exploit these weaknesses, the system is forced to adapt: the failure cases serve as concrete counterexamples that guide the prompt-refinement process. After just one refinement iteration (Round 1), the updated prompt can successfully detect the previously missed anomaly.
 
-For example, in Round 0, \lighttechname fails to detect an attack where \texttt{arguments.oti.assurance} is set to a negative value (\texttt{-2}). After one iteration of adversarial attack–guided refinement, the refined prompt introduces explicit range constraints on numeric fields, which leads to the learned invariant \texttt{assert log["arguments.oti.assurance"] > 0}. This invariant enables the system to identify the anomaly that was previously overlooked.
+For example, in Round 0, \lighttechname fails to detect an attack where \texttt{arguments.oti.assurance} is set to a negative value (\texttt{-2}). After one iteration of adversarial attack–guided refinement, the refined prompt introduces explicit range constraints on numeric fields, which leads to the learned invariant \texttt{assert log["arguments.oti.assurance"] > 0}. This invariant enables the system to identify the anomaly that was previously overlooked. More detailed examples can be found in our repository~\cite{agenticnorm-website}.
 
 This self-improving loop demonstrates how adversarial attacks not only test the robustness of the system but also actively drive the enhancement of detection accuracy, ultimately reducing the need for manual intervention and improving efficiency in practice.
 
@@ -26,6 +26,7 @@ This trend aligns with Figure~\ref{fig:number-of-tokens}, which shows that the n
 \input{floats/05-04-example-fn}
 
 While \lighttechname achieves high precision and recall, some false negatives remain. Figure~\ref{fig:example-fn} illustrates a case from \trainticket that \lighttechname fails to detect. In this example, the field \texttt{arguments.oti.assurance} should only take values in the range \{0, 1, 2, 3\} according to the system documentation. However, since \lighttechname does not have access to this external knowledge, it cannot identify the tampering when the field is set to an out-of-range value (e.g., 5). Currently, our approach relies solely on patterns learned from the logs, which may not cover all domain-specific constraints.
+More detailed examples can be found in our repository~\cite{agenticnorm-website}.
 
 \subsection{Limitations}
 Despite the promising results of AgenticNorm, several limitations remain.

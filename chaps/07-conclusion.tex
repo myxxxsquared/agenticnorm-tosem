@@ -1,5 +1,6 @@
+
 \section{Conclusion}
 
-We presented \lighttechname, a lightweight framework for detecting web tamper attacks that combines field clustering, attack generation, and prompt refinement to make small, locally deployable LLMs effective. 
-Experiments on two benchmarks demonstrate that it achieves the best overall F1-score, with each component contributing to performance gains, and remains robust across models of different scales. 
-Our results highlight that careful architectural design is essential, as naïve substitution of large models with smaller ones leads to significant performance degradation.
+In this paper, we presented \lighttechname, a lightweight and locally deployable framework for detecting web tamper attacks from logs. By combining field clustering, adversarial attack generation, and iterative prompt refinement in a multi-agent workflow, \lighttechname addresses key limitations of prior approaches, including dependence on source code, reliance on heavyweight proprietary models, and sensitivity to prompt design. Our evaluation on TrainTicket and NiceFish demonstrates that \lighttechname achieves state-of-the-art performance while remaining robust across different LLM scales.
+
+Looking ahead, we aim to enable \lighttechname to adapt continuously as web applications evolve, allowing it to handle changing APIs and attack patterns with minimal retraining. We also plan to explore transfer and meta-learning techniques so that invariants and refined prompts learned from one system can be effectively reused in new applications, improving both efficiency and generalization across domains.

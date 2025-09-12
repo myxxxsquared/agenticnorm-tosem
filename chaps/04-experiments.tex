@@ -45,9 +45,9 @@ We adopt precision and recall as the primary metrics.
 For windows of normal logs, if any attack is incorrectly flagged, the window is counted as a false positive (FP); otherwise it is a true negative (TN).
 For attack-containing windows, the detection of any injected attack is considered a true positive (TP), otherwise it is a false negative (FN).
 Formally, precision, recall, and F1-score are computed as
-$$\text{Precision} = \dfrac{TP}{TP + FP},$$
-$$\text{Recall} = \dfrac{TP}{TP + FN},$$
-$$\text{F1} = \dfrac{2 \cdot \text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}}.$$
+$$\text{Precision} = \dfrac{TP}{TP + FP}, \quad
+\text{Recall} = \dfrac{TP}{TP + FN}, \quad
+\text{F1} = \dfrac{2 \cdot \text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}}.$$
 
 \subsection{Results and Analysis}
 

@@ -66,18 +66,11 @@ Log Structure Discovery identifies the schema of logs and their data types.
 Expansion applies a set of rules to flatten nested structures into atomic fields.
 Clustering groups the expanded fields into semantically related clusters using an LLM.
 
+\input{floats/03-08-grammar}
+
 \paragraph{Log Structure Discovery.}
-Each API may produce logs with diverse structures, including nested dictionaries and arrays. We first parse the logs to uncover their structural schema and data types. For each API, \lighttechname analyzes all log entries and infers a unified schema that captures the common structure, represented as fields and their associated types. Formally, we define a recursive grammar for data types:
-\[
-    \begin{aligned}
-        \text{Data} :=\; & \texttt{unknown}                                            \\
-        \;|\;            & \texttt{bool}                                               \\
-        \;|\;            & \texttt{number}                                             \\
-        \;|\;            & \texttt{string}                                             \\
-        \;|\;            & \texttt{dict}[key_1:\text{Data}, key_2:\text{Data}, \ldots] \\
-        \;|\;            & \texttt{array}[\text{Data}]
-    \end{aligned}
-\]
+Each API may produce logs with diverse structures, including nested dictionaries and arrays. We first parse the logs to uncover their structural schema and data types. For each API, \lighttechname analyzes all log entries and infers a unified schema that captures the common structure, represented as fields and their associated types. Formally, we define a recursive grammar for data types shown in Figure~\ref{fig:log-data-grammar}.
+
 Here, \texttt{unknown} denotes cases where the log structure cannot be precisely determined (e.g., due to ambiguity or inconsistency). By aggregating logs across APIs, \lighttechname derives unified schemas that reconcile structural variations.
 
 \paragraph{Expansion.}
