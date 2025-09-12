@@ -1,15 +1,42 @@
 \section{Discussion}
 
-\textbf{Why can adversarial attacks improve anomaly detection efficiency?}
+\input{floats/05-03-example}
 
-Adversarial attacks play a crucial role in refining the prompts used for invariant generation. At the initial stage (Round 0), the prompt may fail to capture critical invariants, leading to missed detections for certain types of tamper attacks. However, when we introduce adversarial attacks that exploit these weaknesses, the system is forced to adapt: the failure cases serve as concrete counterexamples that guide the prompt-refinement process. After just one refinement iteration (Round 1), the updated prompt can successfully detect the previously missed anomaly. 
+\subsection{Impact of Adversarial Attacks on Prompt Refinement}
 
-For example, in Round 0, \lighttechname may fail to detect an attack where [\texttt{PLACEHOLDER\_EXAMPLE}], but after one iteration of adversarial attack–guided refinement, the system adjusts the prompt and captures the invariant necessary to identify this anomaly. This self-improving loop demonstrates how adversarial attacks not only test the robustness of the system but also actively drive the enhancement of detection accuracy, ultimately reducing the need for manual intervention and improving efficiency in practice.
+Adversarial attacks play a crucial role in refining the prompts used for invariant generation. At the initial stage (Round 0), the prompt may fail to capture critical invariants, leading to missed detections for certain types of tamper attacks. However, when we introduce adversarial attacks that exploit these weaknesses, the system is forced to adapt: the failure cases serve as concrete counterexamples that guide the prompt-refinement process. After just one refinement iteration (Round 1), the updated prompt can successfully detect the previously missed anomaly.
 
-\textbf{Rounds of refinement.}
+For example, in Round 0, \lighttechname fails to detect an attack where \texttt{arguments.oti.assurance} is set to a negative value (\texttt{-2}). After one iteration of adversarial attack–guided refinement, the refined prompt introduces explicit range constraints on numeric fields, which leads to the learned invariant \texttt{assert log["arguments.oti.assurance"] > 0}. This invariant enables the system to identify the anomaly that was previously overlooked.
+
+This self-improving loop demonstrates how adversarial attacks not only test the robustness of the system but also actively drive the enhancement of detection accuracy, ultimately reducing the need for manual intervention and improving efficiency in practice.
+
+
+\subsection{Effect of Iterative Prompt Refinement}
 
 \input{floats/05-01-rounds}
 
 \input{floats/05-02-tokens}
 
-Figure~\ref{fig:rounds-of-refinement} illustrates the impact of iterative prompt refinement on detection performance. We observe that performance improves steadily in the first three rounds, reaching a peak F1-score at Round 3. Beyond this point, performance begins to decline slightly. This trend can be attributed to the increasing length of prompts in later rounds (Figure~\ref{fig:number-of-tokens}), which may lead to overfitting or introduce unnecessary complexity that hampers the model's ability to generalize.
+Figure~\ref{fig:rounds-of-refinement} shows the effect of iterative prompt refinement on detection performance across different models. Recall improves consistently in the early rounds, with most models reaching their highest performance by Round 5–6. After this point, additional refinements no longer yield noticeable gains, and performance stabilizes at a plateau.
+
+This trend aligns with Figure~\ref{fig:number-of-tokens}, which shows that the number of tokens in the refined prompts continues to increase with each round. While longer prompts provide more detailed constraints, they eventually add little marginal benefit, indicating that the models have already captured the critical invariants needed for detection. Beyond this stage, further refinement mainly increases prompt complexity without improving effectiveness.
+
+\subsection{False Negatives}
+
+\input{floats/05-04-example-fn}
+
+While \lighttechname achieves high precision and recall, some false negatives remain. Figure~\ref{fig:example-fn} illustrates a case from \trainticket that \lighttechname fails to detect. In this example, the field \texttt{arguments.oti.assurance} should only take values in the range \{0, 1, 2, 3\} according to the system documentation. However, since \lighttechname does not have access to this external knowledge, it cannot identify the tampering when the field is set to an out-of-range value (e.g., 5). Currently, our approach relies solely on patterns learned from the logs, which may not cover all domain-specific constraints.
+
+\subsection{Limitations}
+Despite the promising results of AgenticNorm, several limitations remain.
+We categorize them into external, internal, and constructive limitations.
+
+\paragraph{Benchmark Selection.}
+Our evaluation is restricted to two benchmarks (TrainTicket and NiceFish).
+While these datasets are widely used in prior work, they may not fully reflect the diversity of real-world applications, especially in large-scale industrial or domain-specific systems.
+Moreover, our attack synthesis is guided by the OWASP API Security Top 10, which provides strong coverage of common vulnerabilities but may overlook emerging or highly specialized attack patterns.
+
+\paragraph{Model Dependencies.}
+Although AgenticNorm is designed for lightweight deployment, certain modules (e.g., attack generation and prompt refinement) still rely on larger open-source models.
+This hybrid strategy ensures effectiveness but may limit applicability in environments with strict computational or resource constraints.
+In addition, the iterative prompt refinement process increases prompt length and complexity, which may reduce efficiency and introduce difficulties in maintaining refined prompts at scale.
