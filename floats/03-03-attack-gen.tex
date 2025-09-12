@@ -1,23 +1,46 @@
 
+% \begin{table}
+%     \centering
+%     \caption{OWASP API Security Top 10 categories and their usage in our framework. Frequency-dependent categories are excluded.}
+%     \label{tab:owasptop10}
+%     \myfigfontsize
+%     \begin{tabular}{p{0.8cm}p{5.2cm}p{6.5cm}}
+%         \toprule
+%         \textbf{ID} & \textbf{Category}                               & \textbf{Usage in Our Framework}                                                       \\
+%         \midrule
+%         API1        & Broken Object Level Authorization               & Used. generates attack logs where access control constraints are bypassed.             \\
+%         API2        & Broken Authentication                           & Used. simulates login/session anomalies not captured by current constraints.           \\
+%         API3        & Broken Object Property Level Authorization      & Used. focuses on tampering with specific fields in objects.                           \\
+%         API4        & Unrestricted Resource Consumption               & Excluded. requires modeling frequency/traffic features.                               \\
+%         API5        & Broken Function Level Authorization             & Used. attack logs where high-privilege functions are exposed to low-privilege actors. \\
+%         API6        & Unrestricted Access to Sensitive Business Flows & Used. simulates bypasses of workflow constraints.                                      \\
+%         API7        & Server-Side Request Forgery                     & Used. generates adversarial logs where external calls are injected.                   \\
+%         API8        & Security Misconfiguration                       & Used. models cases where abnormal settings or defaults appear in logs.                \\
+%         API9        & Improper Inventory Management                   & Excluded. relies on large-scale endpoint enumeration patterns.                        \\
+%         API10       & Unsafe Consumption of APIs                      & Used. synthesizes attack logs involving unvalidated or malicious upstream data.       \\
+%         \bottomrule
+%     \end{tabular}
+% \end{table}
+
 \begin{table}
     \centering
-    \caption{OWASP API Security Top 10 categories and their usage in our framework. Frequency-dependent categories are excluded.}
+    \caption{OWASP API Security Top 10 categories used in our framework.
+    We exclude API4 (Unrestricted Resource Consumption) and API9 (Improper Inventory Management) 
+    because both rely on frequency or large-scale traffic/endpoint modeling, which is beyond the scope of our log-based analysis
+    }
     \label{tab:owasptop10}
     \myfigfontsize
-    \begin{tabular}{p{0.8cm}p{5.2cm}p{6.5cm}}
+    \begin{tabular}{ll}
         \toprule
-        \textbf{ID} & \textbf{Category}                               & \textbf{Usage in Our Framework}                                                       \\
+        % \textbf{Category}                               & \textbf{Category}                   \\
+        % \midrule
+        Broken Object Level Authorization               & Broken Authentication               \\
         \midrule
-        API1        & Broken Object Level Authorization               & Used. generates attack logs where access control constraints are bypassed.             \\
-        API2        & Broken Authentication                           & Used. simulates login/session anomalies not captured by current constraints.           \\
-        API3        & Broken Object Property Level Authorization      & Used. focuses on tampering with specific fields in objects.                           \\
-        API4        & Unrestricted Resource Consumption               & Excluded. requires modeling frequency/traffic features.                               \\
-        API5        & Broken Function Level Authorization             & Used. attack logs where high-privilege functions are exposed to low-privilege actors. \\
-        API6        & Unrestricted Access to Sensitive Business Flows & Used. simulates bypasses of workflow constraints.                                      \\
-        API7        & Server-Side Request Forgery                     & Used. generates adversarial logs where external calls are injected.                   \\
-        API8        & Security Misconfiguration                       & Used. models cases where abnormal settings or defaults appear in logs.                \\
-        API9        & Improper Inventory Management                   & Excluded. relies on large-scale endpoint enumeration patterns.                        \\
-        API10       & Unsafe Consumption of APIs                      & Used. synthesizes attack logs involving unvalidated or malicious upstream data.       \\
+        Broken Object Property Level Authorization      & Broken Function Level Authorization \\
+        \midrule
+        Unrestricted Access to Sensitive Business Flows & Server-Side Request Forgery         \\
+        \midrule
+        Security Misconfiguration                       & Unsafe Consumption of APIs          \\
         \bottomrule
     \end{tabular}
 \end{table}

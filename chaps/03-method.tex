@@ -104,7 +104,9 @@ Based on the extracted constraints and a pool of normal logs, we deliberately sy
 
 The \emph{OWASP API Security Top 10}, maintained by the Open Worldwide Application Security Project (OWASP), serves as the de facto reference for identifying and evaluating API vulnerabilities. It is widely adopted by practitioners, penetration testers, and auditors as a standard checklist for assessing the security of modern web APIs. Its categories are derived from extensive industry data and community feedback, collectively covering the vast majority of real-world API attacks observed in practice.
 
-In our framework, we adopt the OWASP API Security Top 10 as the foundation for guiding attack synthesis. Because our anomaly detection operates at the log level rather than the traffic level, frequency-dependent categories (e.g., rate limiting and resource exhaustion) are excluded. For the remaining categories, we refine them into finer-grained subcategories using LLM-based analysis, ensuring that each synthesized attack corresponds to the log semantics of the target system. Table~\ref{tab:owasptop10} summarizes the OWASP API Security Top 10 categories and indicates their usage in our pipeline.
+In our framework, we adopt the OWASP API Security Top 10 as the foundation for guiding attack synthesis. Because our anomaly detection operates at the log level rather than the traffic level, frequency-dependent categories (e.g., rate limiting and resource exhaustion) are excluded. For the remaining categories, we refine them into finer-grained subcategories using LLM-based analysis, ensuring that each synthesized attack corresponds to the log semantics of the target system. 
+Table~\ref{tab:owasptop10} summarizes the OWASP API Security Top 10 categories and indicates their usage in our pipeline.
+Due to space limit, detailed descriptions can be found in our artifact repository~\cite{agenticnorm-website}.
 
 \input{floats/03-03-attack-gen}
 
