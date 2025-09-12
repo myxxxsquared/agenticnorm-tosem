@@ -22,10 +22,6 @@ A central challenge in log-based anomaly detection is that prompt quality strong
 Then, the \textbf{Attack Generation} module synthesizes abnormal logs that break or bypass the learned invariants.
 Finally, the \textbf{Prompt Refinement} module updates LLM prompts using feedback from undetected attacks.
 
-% . These invariants encode consistency, semantic, or structural properties of the system. However, they are inherently incomplete and may fail to anticipate novel forms of manipulation. These generated abnormal logs are then combined with the original normal logs, forming a labeled dataset that covers both benign and adversarial scenarios. This dataset becomes the foundation for evaluating and refining the prompts.
-
-% Finally, instead of literal fine-tuning of model parameters, we adopt a \emph{prompt fine-tuning} process. The current invariants are evaluated on the constructed dataset, and each false positive or false negative is fed back into an LLM to solicit a targeted refinement suggestion. The model can propose to add, modify, or delete clauses in the prompt so that the refined prompt is more robust against the observed errors. After collecting refinement suggestions across the dataset, we aggregate them into a revised prompt.
-
 This iterative adversarial loop allows prompts to evolve dynamically. Each cycle expands the attack space by introducing logs that specifically target the weaknesses of the current invariants, and in turn strengthens the prompts by incorporating counterexamples. Over time, this reduces reliance on manual intervention and improves robustness against both known and novel attacks.
 
 Next, we break down each module in detail.
@@ -138,3 +134,17 @@ After attack generation, we obtain a labeled dataset consisting of both normal a
 \input{floats/03-07-prompt-refine}
 
 Algorithm~\ref{alg:prompt-refinement} outlines the prompt refinement process. For each normal-abnormal log pair in the dataset, we feed it into an LLM along with the current prompt, asking it to generate a modification suggestion. The LLM analyzes the pair and identifies what changes to the prompt could help distinguish between the normal and abnormal cases. This may involve adding new clauses, modifying existing ones, or removing irrelevant parts. Figure~\ref{fig:prompt-refine} shows an abbreviated version of the prompt used for refinement, with the complete version available in our artifact repository~\cite{agenticnorm-website}.
+
+\subsection{Implementation Details}
+
+\paragraph{LLMs Used.}
+\lighttechname is designed to work with lightweight, locally deployable LLMs.
+In our study, we observed that the tasks of \emph{Attack Generation} and \emph{Prompt Refinement} place heavier demands on the neural models, as they require more complex reasoning and creative generation. Therefore, we employ larger-scale models for these two tasks, specifically the open-source DeepSeek-V3.
+For \emph{Constraint Learning}, the requirements are relatively lower, and we adopt smaller models to balance efficiency and effectiveness. In this work, we experimented with multiple models for constraint learning, including \texttt{gpt-oss-120b}, \texttt{gpt-oss-20b}, \texttt{gemma-3-4b}, and \texttt{DeepSeek-V3}. This hybrid strategy allows us to maintain strong performance while reducing overall system resource consumption and deployment complexity.
+
+\paragraph{Hyperparameters.}
+For frequency-based API relation extraction, we set the sliding window size to 20 and select the top-5 most frequent APIs as related APIs.
+In field clustering, the maximum expansion depth for nested dictionaries is limited to 3, in order to avoid field explosion from excessive expansion.
+For each API, we generate up to 10 normal logs and 10 abnormal logs for use in prompt refinement.
+Prompt refinement is iterated for 10 rounds to ensure that the prompts sufficiently adapt to the synthesized attack scenarios.
+Further experimental details can be found in our code repository~\cite{agenticnorm-website}.

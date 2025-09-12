@@ -2,7 +2,7 @@
 
 We focus on the following research questions.
 
-\begin{enumerate}
+\begin{itemize}
 	\item \textbf{RQ1: Overall Performance.}
 	      How effective is \lighttechname in detecting web tamper attacks compared to state-of-the-art baselines and WebNorm?
 	      We evaluate its precision, recall, and F1-score on standard benchmarks.
@@ -18,11 +18,11 @@ We focus on the following research questions.
 	\item \textbf{RQ4: Direct Substitution.}
 	      What happens if WebNorm is directly replaced with a smaller LLM without architectural modifications?
 	      This comparison highlights the necessity of our proposed techniques over naïve model substitution.
-\end{enumerate}
+\end{itemize}
 
 \subsection{Experimental Setup}
 
-\noindent\textbf{Benchmarks.}
+\paragraph{Benchmarks.}
 We evaluate our approach on two widely-used benchmarks of web application logs:
 \trainticket and \nicefish.
 Both datasets contain normal and attack traces derived from real-world systems,
@@ -30,40 +30,24 @@ with injected tampering behaviors that allow controlled evaluation.
 Following prior work, we split logs into fixed-size windows of 20 entries,
 and assign binary labels at the window level.
 
-\noindent\textbf{Baselines.}
+\paragraph{Baselines.}
 To demonstrate the effectiveness of \lighttechname,
 we compare against three categories of methods:
 (1) \textit{learning-based baselines}, including LogRobust~\cite{zhang2019robust},
-LogFormer~\cite{guo2024logformer}, and RAPID FastLogAD~\cite{lin2025rapid},
+LogFormer~\cite{guo2024logformer}, and RAPID FastLogAD~\cite{lin2024fastlogad},
 which rely on supervised or semi-supervised learning of log sequences;
 (2) \textit{rule-based approaches}, represented by WebNorm~\cite{liao2024detecting},
 the current state-of-the-art interpretable system for normality modeling.
 These baselines cover both predictive and rule-driven paradigms in log anomaly detection.
 
-\noindent\textbf{Evaluation Metrics.}
+\paragraph{Evaluation Metrics.}
 We adopt precision and recall as the primary metrics.
 For windows of normal logs, if any attack is incorrectly flagged, the window is counted as a false positive (FP); otherwise it is a true negative (TN).
 For attack-containing windows, the detection of any injected attack is considered a true positive (TP), otherwise it is a false negative (FN).
 Formally, precision and recall are computed as
-$\text{Precision} = \tfrac{TP}{TP + FP}$ and
-$\text{Recall} = \tfrac{TP}{TP + FN}$.
+$$\text{Precision} = \dfrac{TP}{TP + FP},$$
+$$\text{Recall} = \dfrac{TP}{TP + FN}.$$
 We also report F1-score as a harmonic mean for completeness.
-
-\noindent\textbf{LLMs Used.}
-Our framework is designed to work with lightweight, locally deployable LLMs.
-We experiment with multiple scales of open-source models, including \texttt{gpt-oss-120b}, \texttt{gpt-oss-20b}, \texttt{gamma-20b}, and \texttt{gamma-7b},
-to investigate accuracy–efficiency trade-offs.
-Notably, the resource-intensive tasks of \emph{attack generation} and \emph{prompt refinement} are offloaded to the larger \texttt{gpt-4.1} model,
-which synthesizes novel attack cases and iteratively improves invariant prompts.
-The lightweight models then reuse these refined prompts for detection, ensuring practical deployment while maintaining broad coverage.
-
-\noindent\textbf{Implementation Details.}
-All experiments are implemented in Python.
-We deploy local LLMs using the \texttt{vLLM} inference framework for efficient serving.
-Our setup runs on a workstation equipped with a single NVIDIA RTX~6000 Ada Generation GPU (49{,}140\,MiB memory)
-and an Intel(R) Xeon(R) w7-2475X CPU.
-This configuration allows us to evaluate small and medium-scale models locally while reserving larger-scale reasoning (e.g., attack generation) for cloud-hosted \texttt{gpt-4.1}.
-
 
 \input{floats/04-01-overall}
 
