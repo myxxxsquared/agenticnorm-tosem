@@ -5,7 +5,25 @@
 \usepackage{xspace}
 \usepackage{algorithm}
 \usepackage{algorithmic}
+\usepackage{pifont}
+\usepackage{enumitem}
+\usepackage{calc}
 
 \newcommand{\lighttechname}{AgenticNorm\xspace}
 \newcommand{\trainticket}{TrainTicket\xspace}
 \newcommand{\nicefish}{NiceFish\xspace}
+
+\lstdefinelanguage{json}{
+    basicstyle=\ttfamily\small,
+    numbers=left,
+    numberstyle=\tiny,
+    stepnumber=1,
+    numbersep=5pt,
+    showstringspaces=false,
+    breaklines=true,
+    frame=single,
+    morestring=[b]",
+    morecomment=[l]{//},
+    stringstyle=\color{blue},
+    keywordstyle=\color{teal}\bfseries,
+}

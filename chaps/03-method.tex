@@ -5,9 +5,12 @@
 In this section, we present \lighttechname, a lightweight multi-agent anomaly detection framework for web applications.
 \lighttechname is designed to overcome the limitations of prior solutions such as WebNorm, namely the reliance on heavyweight closed-source models, sensitivity to prompt engineering, and difficulty in handling long log contexts.
 Figure~\ref{fig:method_overview} provides an overview of the workflow.
-We first outline the overall workflow, and then describe each component in detail.
+% We first outline the overall workflow, and then describe each component in detail.
 
 \subsection{Workflow}
+
+A central challenge in log-based anomaly detection is that prompt quality strongly influences the detection results. Fixed prompts are brittle and may fail to capture some invariants, leading to missed anomalies. To address this limitation, we propose the an iteration loop, in which attack generation and prompt adjustment are tightly coupled. The loop continuously strengthens prompts by exposing them to adversarial scenarios that exploit their current weaknesses. This iterative consiss of three main modules, forming an iterative loop (Figure~\ref{fig:method_overview}):
+
 \lighttechname consists of three main modules, forming an iterative loop (Figure~\ref{fig:method_overview}):
 \begin{itemize}
     \item \textbf{Constraint Learning}: derives invariants from normal logs.
@@ -15,23 +18,25 @@ We first outline the overall workflow, and then describe each component in detai
     \item \textbf{Prompt Refinement}: updates LLM prompts using feedback from undetected attacks.
 \end{itemize}
 
-A central challenge in log-based anomaly detection is that prompt quality strongly influences the detection results. Fixed prompts are brittle and may fail to capture subtle invariants, leading to missed anomalies. To address this limitation, we propose the an iteration loop, in which attack generation and prompt adjustment are tightly coupled. The loop continuously strengthens prompts by exposing them to adversarial scenarios that exploit their current weaknesses.
+\lighttechname begins by deriving invariants from the normal logs using an initial prompt by \textbf{Constraint Learning}.
+Then, the \textbf{Attack Generation} module synthesizes abnormal logs that break or bypass the learned invariants.
+Finally, the \textbf{Prompt Refinement} module updates LLM prompts using feedback from undetected attacks.
 
-We begin by deriving invariants from the normal logs using an initial prompt. These invariants encode consistency, semantic, or structural properties of the system. However, they are inherently incomplete and may fail to anticipate novel forms of manipulation.
+% . These invariants encode consistency, semantic, or structural properties of the system. However, they are inherently incomplete and may fail to anticipate novel forms of manipulation. These generated abnormal logs are then combined with the original normal logs, forming a labeled dataset that covers both benign and adversarial scenarios. This dataset becomes the foundation for evaluating and refining the prompts.
 
-These generated abnormal logs are then combined with the original normal logs, forming a labeled dataset that covers both benign and adversarial scenarios. This dataset becomes the foundation for evaluating and refining the prompts.
-
-Finally, instead of literal fine-tuning of model parameters, we adopt a \emph{prompt fine-tuning} process. The current invariants are evaluated on the constructed dataset, and each false positive or false negative is fed back into an LLM to solicit a targeted refinement suggestion. The model can propose to add, modify, or delete clauses in the prompt so that the refined prompt is more robust against the observed errors. After collecting refinement suggestions across the dataset, we aggregate them into a revised prompt.
+% Finally, instead of literal fine-tuning of model parameters, we adopt a \emph{prompt fine-tuning} process. The current invariants are evaluated on the constructed dataset, and each false positive or false negative is fed back into an LLM to solicit a targeted refinement suggestion. The model can propose to add, modify, or delete clauses in the prompt so that the refined prompt is more robust against the observed errors. After collecting refinement suggestions across the dataset, we aggregate them into a revised prompt.
 
 This iterative adversarial loop allows prompts to evolve dynamically. Each cycle expands the attack space by introducing logs that specifically target the weaknesses of the current invariants, and in turn strengthens the prompts by incorporating counterexamples. Over time, this reduces reliance on manual intervention and improves robustness against both known and novel attacks.
+
+Next, we break down each module in detail.
 
 \subsection{Constraint Learning}
 
 \input{floats/03-02-method-constraintlearning.tex}
 
 \lighttechname generally follows the idea of WebNorm, but differs in that it does not rely on source code or data-flow analysis.
-Figure~\ref{fig:method_constraint} illustrates the process of constraint learning.
 This requires us to replace several of its original components.
+Figure~\ref{fig:method_constraint} illustrates the process of constraint learning.
 First, \lighttechname discovers relationships between APIs through frequency-based analysis.
 Next, to adapt to lightweight LLMs, \lighttechname applies \emph{Field Clustering}, which reduce the length of the input context per query, thereby lowering the workload of the model while improving its ability to identify constraints.
 Finally, \lighttechname adopts a similar approach to WebNorm for detecting both intra-API and inter-API constraints, using an LLM to extract invariants and generate corresponding Python checking code.
@@ -44,11 +49,28 @@ Specifically, for a given API, it scans the surrounding window of log entries an
 The top-$K$ most frequent co-occurrences are considered related APIs, thus establishing inter-API relations.
 After this step, we utilize an LLM to verify and filter out spurious relations.
 
+\input{floats/03-04-freq}
+
+Figure~\ref{fig:method-freq} shows an example of frequency-based analysis on \trainticket dataset.
+Given a list of API calls, we slide a window of size $K$ and count the frequency of co-occurring APIs.
+For instance, in this case, \texttt{CreateOrder} and \texttt{AddPassenger} frequently appear together, indicating a potential relationship.
+Then LLM is used to verify and filter out spurious relations.
+
 \subsubsection{Field Clustering}
 
-Lightweight LLMs are constrained by limited context windows, making it infeasible to directly process lengthy and complex logs. To address this limitation, we introduce \emph{field clustering}, a technique that decomposes log entries into semantically related groups. This allows invariants to be extracted while ensuring that the input remains within the restricted context length. Figure~\ref{fig:motivating_example_clustering} illustrates how fields are expanded and clustered. Our approach consists of a three-stage process:
+Lightweight LLMs are constrained by limited context windows, making it infeasible to directly process lengthy and complex logs. To address this limitation, we introduce \emph{field clustering}, a technique that decomposes log entries into semantically related groups. This allows invariants to be extracted while ensuring that the input remains within the restricted context length.
 
-\paragraph{1. Log Structure Discovery.}
+To this end, \lighttechname first analyzes the structure of logs, which often contain nested dictionaries and arrays. It then applies a set of expansion rules to flatten these structures into atomic fields. Finally, it employs an LLM to cluster the expanded fields based on semantic relatedness, forming compact groups that can be processed within the context limits.
+
+Figure~\ref{fig:motivating_example_clustering} provides an example of field clustering process. The original log contains nested dicts (e.g., \texttt{arguments}, \texttt{qi}, et al.) and array (\texttt{results}). These structures are first expanded into flat fields (e.g., \texttt{arguments.loginId}, \texttt{arguments.orderId}, et al). Finally, the expanded fields are clustered into semantically related groups (e.g., the cluster of \texttt{arguments.loginId}, \texttt{env.userId},
+\texttt{qi.accountId} represents user identifiers).
+
+Formally, we show the field clustering process in three steps: Log Structure Discovery, Expansion, and Clustering.
+Log Structure Discovery identifies the schema of logs and their data types.
+Expansion applies a set of rules to flatten nested structures into atomic fields.
+Clustering groups the expanded fields into semantically related clusters using an LLM.
+
+\paragraph{Log Structure Discovery.}
 Each API may produce logs with diverse structures, including nested dictionaries and arrays. We first parse the logs to uncover their structural schema and data types. For each API, \lighttechname analyzes all log entries and infers a unified schema that captures the common structure, represented as fields and their associated types. Formally, we define a recursive grammar for data types:
 \[
     \begin{aligned}
@@ -62,54 +84,25 @@ Each API may produce logs with diverse structures, including nested dictionaries
 \]
 Here, \texttt{unknown} denotes cases where the log structure cannot be precisely determined (e.g., due to ambiguity or inconsistency). By aggregating logs across APIs, \lighttechname derives unified schemas that reconcile structural variations.
 
-\paragraph{2. Expansion.}
-After schema discovery, we apply a set of expansion rules to transform nested structures into flat fields. This ensures that all relevant information is explicitly represented, thereby facilitating clustering and invariant extraction. The expansion rules are as follows:
+\paragraph{Expansion.}
+After schema discovery, we apply a set of expansion rules to transform nested structures into flat fields. This ensures that all relevant information is explicitly represented, thereby facilitating clustering and invariant extraction.
 
+The rules are as follows:
 \begin{itemize}
-    \item \textbf{Rule 1 – Dict Expansion:}
-          For a dictionary value, each key is concatenated with its parent field using a dot “.” separator.
-          \begin{quote}
-              Example:
-              \verb|"f1": { "subf1": x, "subf2": y }|
-              expands into
-              \verb|"f1.subf1": x, "f1.subf2": y|
-          \end{quote}
-
-    \item \textbf{Rule 2 – Array Expansion:}
-          For an array of primitive values, each element is indexed by its position.
-          \begin{quote}
-              Example:
-              \verb|"f2": [a, b, c]|
-              expands into
-              \verb|"f2[0]": a, "f2[1]": b, "f2[2]": c|
-          \end{quote}
-
-    \item \textbf{Rule 3 – Array of Dict Expansion:}
-          For an array of dictionaries, each dictionary is expanded recursively using both the array index and the key.
-          \begin{quote}
-              Example:
-              \verb|"f3": [ {"id": 1, "val": 10}, {"id": 2, "val": 20} ]|
-              expands into
-              \verb|"f3[0].id": 1, "f3[0].val": 10, "f3[1].id": 2, "f3[1].val": 20|
-          \end{quote}
-
-    \item \textbf{Rule 4 – Field Joining:}
-          In certain cases, meaningful semantics emerge when fields from different structural levels are \emph{joined}. Specifically, if an outer field and an inner field share a common key (e.g., an identifier), we match the entry and promote it as a new joined field.
-
-          \begin{quote}
-              Example:
-              \verb|{ "x": 1234, "y": [ {"id": 1234, "status": "success"}, {"id": 2345, "status": "failed"} ] }|
-
-              Here, field \verb|x| can be joined with the elements of \verb|y| via the \verb|"id"| field. Since \verb|x = 1234|, we select the element of \verb|y| with \verb|"id": 1234|. The result is a new joined field:
-
-              \verb|"y['joined']": {"id": 1234, "status": "success"}|
-
-              This rule captures cross-level relationships hidden in nested structures and represents them as explicit fields.
-          \end{quote}
+    \item \textbf{Dict Expansion}: For a dictionary value, each key is concatenated with its parent field using a dot ``.'' separator. Formally, \texttt{d: dict[key: value]} is expanded into \texttt{"d.key": value}.
+    \item \textbf{Array of Dict Expansion}: For an array of dictionaries, each dictionary key is expanded to a new array field. Formally, \texttt{a: array[dict[key: value]]} is expanded into \texttt{"a[].key": array[value]}.
+    \item \textbf{Field Joining}: In certain cases, meaningful semantics emerge when fields from different structural levels are \emph{joined}. Specifically, if an outer field and an inner field share a common key (e.g., an identifier), we match the entry and promote it as a new joined field.
 \end{itemize}
 
-\paragraph{3. Clustering.}
-The expansion step yields a large set of atomic fields, which must be organized into semantically coherent groups. To manage context length effectively, we cluster fields based on semantic relatedness. Instead of relying on hand-crafted heuristics, we employ an LLM to partition the expanded fields into clusters. For example, identifiers such as \verb|user_id|, \verb|session_id|, and joined fields with matching IDs form one cluster, while numerical values such as \verb|price|, \verb|amount|, and \verb|discount| form another. This LLM-based clustering leverages semantic knowledge to generate meaningful and task-relevant partitions.
+Here are some examples of the expansion rules in motivating example:
+\begin{itemize}
+    \item \textbf{Dict Expansion}: \texttt{arguments: dict[loginId: string, orderId: string]} is expanded into \texttt{"arguments.loginId": string, "arguments.orderId": string}.
+    \item \textbf{Array of Dict Expansion}: \texttt{results: array[dict[id: number, status: string]]} is expanded into \texttt{"results[].id": array[number], "results[].status": array[string]}.
+    \item \textbf{Field Joining}: \texttt{arguments.orderId} can be joined with the elements of \texttt{results} via the \texttt{id} field. The result is a new joined field: \texttt{"results['joined']": dict[id: number, status: string]}.
+\end{itemize}
+
+\paragraph{Clustering.}
+The expansion step yields a large set of atomic fields, which are then organized into semantically coherent groups. To manage context length effectively, we cluster fields based on semantic relatedness. Instead of relying on hand-crafted heuristics, we employ an LLM to partition the expanded fields into clusters. For example, identifiers such as \verb|user_id|, \verb|session_id|, and joined fields with matching IDs form one cluster, while numerical values such as \verb|price|, \verb|amount|, and \verb|discount| form another. This LLM-based clustering leverages semantic knowledge to generate meaningful and task-relevant partitions.
 
 Through this pipeline, lengthy and complex logs are transformed into compact, semantically organized structures, enabling lightweight LLMs to effectively generate invariants without exceeding context limitations.
 

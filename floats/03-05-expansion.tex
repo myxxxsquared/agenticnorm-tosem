@@ -1,0 +1,23 @@
+\begin{table}
+    \centering
+    \caption{Expansion Rules for Flattening Nested Structures}
+    \begin{tabular}{p{0.32\linewidth} p{0.6\linewidth}}
+        \toprule
+        \textbf{Rule 1. Dict Expansion}          &
+        \verb|"f1": { "subf1": x, "subf2": y }|
+        $\Rightarrow$ \verb|"f1.subf1": x, "f1.subf2": y|                            \\
+        \midrule
+        \textbf{Rule 2. Array Expansion}         &
+        \verb|"f2": [a, b, c]|
+        $\Rightarrow$ \verb|"f2[0]": a, "f2[1]": b, "f2[2]": c|                      \\
+        \midrule
+        \textbf{Rule 3. Array of Dict Expansion} &
+        \verb|"f3": [ {"id":1,"val":10},{"id":2,"val":20} ]|
+        $\Rightarrow$ \verb|"f3[0].id":1,"f3[0].val":10,"f3[1].id":2,"f3[1].val":20| \\
+        \midrule
+        \textbf{Rule 4. Field Joining}           &
+        \verb|{ "x": 1234, "y": [ {"id":1234,"status":"success"},... ] }|
+        $\Rightarrow$ \verb|"y['joined']":{"id":1234,"status":"success"}|            \\
+        \bottomrule
+    \end{tabular}
+\end{table}
