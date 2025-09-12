@@ -23,11 +23,15 @@ The most prominent example is WebNorm~\cite{liao2024detecting}, which encodes be
 While effective, WebNorm relies heavily on source code analysis and large proprietary models, and it does not explicitly enforce the consistency between logs and their underlying data sources. 
 Our work builds on this direction, proposing techniques that refine normality inference with lightweight, deployable models and enhanced relational reasoning.
 
+% \paragraph{RESTful API Security.}
+% RESTful APIs, by virtue of their statelessness and ubiquity, have become an essential surface for attacks in modern web systems. 
+% Prior research has extensively explored automated vulnerability discovery through API testing and fuzzing~\cite{deng2023nautilus,du2024vulnerability,atlidakis2019restler,viglianisi2020resttestgen,martin2020restest,martin2020automated}. 
+% These methods typically mutate request sequences or payloads to trigger failures, guided by API specifications, dependency constraints~\cite{viglianisi2020resttestgen,martin2020restest}, or machine learning predictions~\cite{lyu2023miner}. 
+% Enhanced strategies further refine the fuzzing process to target specific classes of vulnerabilities such as injection attacks or cross-site scripting~\cite{deng2023nautilus,du2024vulnerability}.
+
 \paragraph{RESTful API Security.}
-RESTful APIs, by virtue of their statelessness and ubiquity, have become an essential surface for attacks in modern web systems. 
-Prior research has extensively explored automated vulnerability discovery through API testing and fuzzing~\cite{deng2023nautilus,du2024vulnerability,atlidakis2019restler,viglianisi2020resttestgen,martin2020restest,martin2020automated}. 
-These methods typically mutate request sequences or payloads to trigger failures, guided by API specifications, dependency constraints~\cite{viglianisi2020resttestgen,martin2020restest}, or machine learning predictions~\cite{lyu2023miner}. 
-Enhanced strategies further refine the fuzzing process to target specific classes of vulnerabilities such as injection attacks or cross-site scripting~\cite{deng2023nautilus,du2024vulnerability}.
+RESTful APIs, by virtue of their statelessness, simplicity, and ubiquity, have become a critical component of modern web systems as well as an essential surface for attacks.
+Prior research has explored automated vulnerability discovery through API testing and fuzzing~\cite{deng2023nautilus,du2024vulnerability,atlidakis2019restler,viglianisi2020resttestgen,martin2020restest,martin2020automated}, where request sequences or payloads are systematically mutated to reveal abnormal behaviors. These methods are often guided by API specifications, dependency constraints~\cite{viglianisi2020resttestgen,martin2020restest}, or machine learning predictions~\cite{lyu2023miner}, reducing the need for manual rule design. More recent approaches further refine fuzzing strategies to target specific classes of vulnerabilities, such as injection attacks and cross-site scripting~\cite{deng2023nautilus,du2024vulnerability}, thereby improving the precision and effectiveness of automated security testing.
 
 While fuzzing uncovers flaws through active probing, our approach takes a complementary perspective: we aim to strengthen API security by learning constraints that characterize normal interaction patterns. 
 By detecting deviations from these learned normalities, we provide a systematic way to capture tampering behaviors that bypass conventional fuzzing-based detection.
