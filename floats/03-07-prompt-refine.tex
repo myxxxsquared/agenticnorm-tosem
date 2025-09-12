@@ -1,0 +1,38 @@
+\begin{figure}[t]
+    \centering
+    % \subcaption[Modification Suggestions]{
+    \begin{subfigure}{.96\textwidth}
+        \begin{mdframed}[linewidth=0.5pt,roundcorner=0pt,linecolor=black]
+            \begin{minipage}{0.95\linewidth}
+                \small
+                \noindent \textit{** Identify **} You are an expert in prompt engineering and invariant design for API logs. Your role is to iteratively refine prompts so they generate stronger invariants and corresponding Python detection functions. Your should output modification suggestions for the current prompt.
+                    {\color{gray}{\textit{[Input/Output Format] [Example]}}}
+
+                \noindent \textit{** Input **} {\colorbox{red!20}{\textit{[Normal Log Entries] [Abnormal Log Entries] [Current Prompt]}}}
+
+                \noindent \textit{** Output **} {\colorbox{green!20}{\textit{[Modification Suggestions]}}}
+
+            \end{minipage}
+        \end{mdframed}
+        \caption{Modification Suggestions}
+    \end{subfigure}
+
+    \begin{subfigure}{.96\textwidth}
+        \begin{mdframed}[linewidth=0.5pt,roundcorner=0pt,linecolor=black]
+            \begin{minipage}{0.95\linewidth}
+                \small
+                \noindent \textit{** Identify **} You are an expert in prompt engineering and invariant design for API logs. Your role is to iteratively refine prompts so they generate stronger invariants and corresponding Python detection functions. You should apply the suggested modifications to the current prompt.
+                    {\color{gray}{\textit{[Input/Output Format] [Example]}}}
+
+                \noindent \textit{** Input **} {\colorbox{red!20}{\textit{[Current Prompt] [Modification Suggestions]}}}
+
+                \noindent \textit{** Output **} {\colorbox{green!20}{\textit{[Refined Prompt]}}}
+
+            \end{minipage}
+        \end{mdframed}
+        \caption{Refined Prompt}
+    \end{subfigure}
+    \caption{Abbreviated version of the LLM prompt for prompt refinement.
+        The complete prompt is available in our artifact repository~\cite{agenticnorm-website}.}
+    \label{fig:prompt-refine}
+\end{figure}

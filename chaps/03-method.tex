@@ -112,22 +112,29 @@ The invariant generation process of \lighttechname closely resembles that of Web
 
 \subsection{Attack Generation}
 
-Based on the extracted invariants and a pool of normal logs, we deliberately generate abnormal logs that are difficult for the current invariants to detect. The attack generation process is guided by the \emph{OWASP API Security Top 10}, which is one of the most authoritative industry standards for summarizing API vulnerabilities. To make the framework compatible with our log-based setting, we exclude frequency- and usage-based attacks (e.g., excessive resource consumption).
+Based on the extracted invariants and a pool of normal logs, we deliberately synthesize abnormal log entries that are difficult for the current invariants to capture. The attack generation process is anchored in the \emph{OWASP API Security Top 10}, one of the most authoritative industry standards for categorizing API vulnerabilities. To align with our log-based setting, we exclude categories that depend primarily on traffic volume or usage frequency (e.g., excessive resource consumption).
 
-To ground our attack generation process in widely recognized security standards, we adopt the \emph{OWASP API Security Top 10}. This framework, maintained by the Open Worldwide Application Security Project (OWASP), is one of the most authoritative industry references for API vulnerabilities. It is widely used by practitioners, penetration testers, and auditors as the de facto checklist for assessing the security of modern web APIs. The categories are derived from extensive industry data and community input, and they collectively cover the vast majority of real-world API attacks reported across the web.
+The \emph{OWASP API Security Top 10}, maintained by the Open Worldwide Application Security Project (OWASP), serves as the de facto reference for identifying and evaluating API vulnerabilities. It is widely adopted by practitioners, penetration testers, and auditors as a standard checklist for assessing the security of modern web APIs. Its categories are derived from extensive industry data and community feedback, collectively covering the vast majority of real-world API attacks observed in practice.
 
-In our setting, we take the OWASP API Top 10 as a foundation for guiding attack synthesis. Since our log-based anomaly detection framework does not model traffic-level features, we exclude frequency-dependent categories (e.g., rate limiting issues, excessive resource consumption). For the remaining categories, we further refine them into subcategories using LLM-based analysis, ensuring that each attack is tailored to the log semantics of the system under study.
+In our framework, we adopt the OWASP API Security Top 10 as the foundation for guiding attack synthesis. Because our anomaly detection operates at the log level rather than the traffic level, frequency-dependent categories (e.g., rate limiting and resource exhaustion) are excluded. For the remaining categories, we refine them into finer-grained subcategories using LLM-based analysis, ensuring that each synthesized attack corresponds to the log semantics of the target system. Table~\ref{tab:owasptop10} summarizes the OWASP API Security Top 10 categories and indicates their usage in our pipeline.
 
-\input{floats/03-03-attack-gen.tex}
+\input{floats/03-03-attack-gen}
 
-Table~\ref{tab:owasptop10} summarizes the OWASP API Security Top 10 categories and indicates their usage in our pipeline.
+\input{floats/03-06-prompt-attack-gen}
 
-By leveraging this taxonomy, our attack generation process inherits both breadth and credibility: it covers a wide spectrum of realistic API threats while remaining compatible with our log-based invariant detection setting.
+Concretely, for each API and each API pair, we first sample a set of normal log entries. Guided by the OWASP classification and the descriptions of each attack category, we then prompt an LLM to generate corresponding abnormal log entries. The generated logs are required to bypass the existing invariants whenever possible. These abnormal entries, together with the sampled normal logs, form a labeled dataset that is subsequently used for prompt refinement. The prompt used for attack generation is shown in Figure~\ref{fig:prompt}, with detailed attack strategies and input/output examples provided in our artifact repository~\cite{agenticnorm-website}.
+
+By grounding attack generation in this taxonomy, our framework inherits both breadth and credibility: it covers a wide spectrum of realistic API threats while remaining fully compatible with our log-based invariant detection setting.
+
 
 \subsection{Prompt Refinement}
+
 
 After attack generation, we obtain a labeled dataset consisting of both normal and abnormal logs. Our next task is to refine the prompts used in invariant generation, so that they can better capture the constraints needed to detect the synthesized attacks. The refinement process is similar to learning a model from labeled data, where the input dataset is the logs and the labels are whether each log is normal or abnormal. The difference is that instead of adjusting model parameters by policy gradient or backpropagation, we update the prompt text itself using an LLM.
 
 \input{floats/03-04-refinement.tex}
 
-Algorithm~\ref{alg:prompt-refinement} outlines the prompt refinement process. For each normal-abnormal log pair in the dataset, we feed it into an LLM along with the current prompt, asking it to generate a modification suggestion. The LLM analyzes the pair and identifies what changes to the prompt could help distinguish between the normal and abnormal cases. This may involve adding new clauses, modifying existing ones, or removing irrelevant parts.
+
+\input{floats/03-07-prompt-refine}
+
+Algorithm~\ref{alg:prompt-refinement} outlines the prompt refinement process. For each normal-abnormal log pair in the dataset, we feed it into an LLM along with the current prompt, asking it to generate a modification suggestion. The LLM analyzes the pair and identifies what changes to the prompt could help distinguish between the normal and abnormal cases. This may involve adding new clauses, modifying existing ones, or removing irrelevant parts. Figure~\ref{fig:prompt-refine} shows an abbreviated version of the prompt used for refinement, with the complete version available in our artifact repository~\cite{agenticnorm-website}.
