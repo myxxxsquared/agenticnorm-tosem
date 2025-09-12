@@ -49,42 +49,39 @@ $$\text{Precision} = \dfrac{TP}{TP + FP},$$
 $$\text{Recall} = \dfrac{TP}{TP + FN},$$
 $$\text{F1} = \dfrac{2 \cdot \text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}}.$$
 
-
 \subsection{Results and Analysis}
 
 \input{floats/04-01-overall}
 
 \paragraph{RQ1: Overall Performance.}
-
-Table~\ref{tab:overall-eval} summarizes the overall comparison\footnote{We note that our reproduced results of WebNorm differ slightly from those reported in the original paper. After contacting the authors, we confirmed that they updated their dataset, which improved precision but reduced recall, and the results shown here reflect this corrected version.}.
-\lighttechname achieves the highest F1-score on both \trainticket (0.92) and \nicefish (0.95).
-Some baselines, such as LogFormer and RAPID, achieve relatively high recall
+Table~\ref{tab:overall-eval} summarizes the overall comparison\footnote{We note that our reproduced results of WebNorm differ slightly from those reported in the original paper. After contacting the authors, we confirmed that they updated their dataset, which improved precision but reduced recall. The results shown here reflect this corrected version.}.
+\lighttechname achieves the highest F1-scores on both \trainticket (0.92) and \nicefish (0.95).
+Some baselines, such as LogFormer and RAPID, obtain relatively high recall
 (e.g., 0.90 on \trainticket and 1.00 on \nicefish for RAPID),
 but this comes at the cost of extremely low precision (0.11 / 0.04),
-leading to large numbers of false alarms.
-LogFormer strikes a better balance, but its F1-scores (0.40 / 0.42) still lag significantly behind ours.
-By contrast, WebNorm achieves perfect precision (1.00) but suffers from reduced recall
+leading to many false alarms.
+LogFormer offers a more balanced trade-off, but its F1-scores (0.40 / 0.42) remain far lower than ours.
+By contrast, WebNorm achieves perfect precision (1.00) but suffers from lower recall
 (0.80 on \trainticket and 0.75 on \nicefish),
-causing many real attacks to be missed due to its reliance on fixed rules.
+missing many real attacks due to its reliance on fixed rules.
 \lighttechname preserves the perfect precision of WebNorm while substantially improving recall
-(0.86 / 0.92), thereby delivering the strongest overall detection performance.
+(0.86 / 0.92), thus delivering the strongest overall detection performance.
 
-\finding{\textbf{RQ1:} \lighttechname outperforms state-of-the-art baselines, achieving the highest F1-scores on both benchmarks.}
+\finding{\textbf{RQ1:} \lighttechname surpasses state-of-the-art baselines, achieving the best F1-scores across both benchmarks.}
 
 \input{floats/04-02-ablation}
 
 \paragraph{RQ2: Ablation Study.}
-
 Table~\ref{tab:ablation-study} reports the impact of removing each component.
-All three modules contribute to performance improvements, but the effects differ in magnitude.
+All three modules contribute to performance improvements, but their effects differ in magnitude.
 Field clustering proves most critical: removing it reduces the F1-score from 0.92 to 0.60 on \trainticket
 and from 0.95 to 0.83 on \nicefish.
-Prompt refinement shows a similar level of importance, with F1 dropping to 0.61 and 0.83, respectively.
-By contrast, removing API relation prediction causes a smaller degradation
+Prompt refinement has a comparable impact, with F1 dropping to 0.61 and 0.83, respectively.
+By contrast, removing API relation prediction leads to smaller but still notable degradation
 (0.92 $\rightarrow$ 0.67 on \trainticket and 0.95 $\rightarrow$ 0.50 on \nicefish),
-indicating that it is less dominant but still provides complementary benefits.
+showing that it provides complementary benefits.
 
-\finding{\textbf{RQ2:} Each component of \lighttechname significantly enhances performance, with field clustering and prompt refinement being particularly impactful.}
+\finding{\textbf{RQ2:} Each component of \lighttechname improves performance, with field clustering and prompt refinement being especially crucial.}
 
 \input{floats/04-03-models}
 
@@ -93,25 +90,23 @@ Table~\ref{tab:comparing-llms} shows results when varying the LLM used for the
 \emph{Constraint Learning} module, while keeping \emph{Attack Generation} and
 \emph{Prompt Refinement} fixed to DeepSeek-V3.
 Across all four models (\texttt{DeepSeek-V3}, \texttt{Gemma 3 4B}, \texttt{GPT-OSS 20B}, \texttt{GPT-OSS 120B}),
-the precision remains consistently perfect (1.00),
+precision remains consistently perfect (1.00),
 and recall varies only slightly
 (0.83--0.86 on \trainticket and 0.90--0.95 on \nicefish).
 This indicates that the effectiveness of \lighttechname is not tied to a specific
 model scale in the constraint learning stage.
-The invariants produced through our clustering and refinement strategy are robust
-enough to transfer across models,
-showing that smaller and more efficient LLMs can be deployed in practice
+The invariants derived through clustering and refinement are robust across models,
+demonstrating that smaller and more efficient LLMs can be deployed in practice
 without sacrificing detection accuracy.
 
-\finding{\textbf{RQ3:} \lighttechname maintains high performance across different LLMs, demonstrating its adaptability to smaller, locally deployable models.}
+\finding{\textbf{RQ3:} \lighttechname maintains high performance across different LLMs, confirming its adaptability to smaller, locally deployable models.}
 
 \paragraph{RQ4: Direct Substitution.}
-To further validate our design, we directly replace WebNorm’s backbone with smaller LLMs, i.e., \texttt{Gemma 3 4B},
-without any of the proposed architectural modifications.
-The performance drops sharply in recall. On \trainticket, recall falls from 0.92 to 0.60, and on \nicefish, it plummets from 0.95 to 0.50.
-This experiment highlights that naïvely substituting large models with smaller ones is not sufficient:
-while WebNorm works with powerful external LLMs,
-its invariants are too brittle when scaled down.
-By contrast, our techniques (field clustering, attack generation, and prompt refinement)
-make small models competitive, enabling practical local deployment.
+To further validate our design, we directly substitute WebNorm’s backbone with a smaller LLM (e.g., \texttt{DeepSeek V3}),
+without applying any of our proposed architectural modifications.
+Performance drops sharply in recall: on \trainticket, recall falls from 0.92 to 0.60, and on \nicefish, from 0.95 to 0.50.
+This experiment shows that naïvely replacing large models with smaller ones is insufficient.
+While WebNorm functions well with powerful external LLMs, its invariants are too brittle when scaled down.
+By contrast, our techniques—field clustering, attack generation, and prompt refinement—enable small models to remain competitive, supporting practical local deployment.
 
+\finding{\textbf{RQ4:} Simply substituting smaller LLMs into WebNorm leads to severe performance degradation, highlighting the necessity of our architectural innovations for making lightweight deployment viable.}
