@@ -77,14 +77,14 @@ All three modules contribute to performance improvements, but their effects diff
 Field clustering proves most critical: removing it reduces the F1-score from 0.92 to 0.60 on \trainticket
 and from 0.95 to 0.83 on \nicefish.
 Prompt refinement has a comparable impact, with F1 dropping to 0.61 and 0.83, respectively.
-By contrast, removing API relation prediction leads to smaller but still notable degradation
+By contrast, removing API relation prediction (in Constraint Learning) leads to smaller but still notable degradation
 (0.92 $\rightarrow$ 0.67 on \trainticket and 0.95 $\rightarrow$ 0.50 on \nicefish),
 showing that it provides complementary benefits.
 
 \input{floats/04-04-tokens}
 
 To further evaluate the effectiveness of field clustering, we analyze the total number of input tokens in the prompts, comparing settings with and without clustering.
-Table~\ref{tab:tokens-comparison} reports the token counts for each invariant generation task. The reduction is particularly pronounced on \trainticket, as its logs contain more fields, and clustering eliminates a larger portion of redundancy. By shortening the token length, the model can process inputs more efficiently, which in turn leads to higher-quality invariants.
+Table~\ref{tab:tokens-comparison} reports the token counts for each invariant generation task. The reduction is particularly pronounced on \trainticket, as its logs contain more fields, and clustering eliminates a larger portion of redundancy. By shortening the token length, the model can process inputs more efficiently, which in turn leads to higher-quality constraints.
 
 \finding{\textbf{RQ2:} Each component of \lighttechname improves performance, with field clustering and prompt refinement being especially crucial.}
 
@@ -100,7 +100,7 @@ and recall varies only slightly
 (0.83--0.86 on \trainticket and 0.90--0.95 on \nicefish).
 This indicates that the effectiveness of \lighttechname is not tied to a specific
 model scale in the constraint learning stage.
-The invariants derived through clustering and refinement are robust across models,
+The constraints derived through clustering and refinement are robust across models,
 demonstrating that smaller and more efficient LLMs can be deployed in practice
 without sacrificing detection accuracy.
 
@@ -111,7 +111,8 @@ To further validate our design, we directly substitute WebNorm’s backbone with
 without applying any of our proposed architectural modifications.
 Performance drops sharply in recall: on \trainticket, recall falls from 0.92 to 0.60, and on \nicefish, from 0.95 to 0.50.
 This experiment shows that naïvely replacing large models with smaller ones is insufficient.
-While WebNorm functions well with powerful external LLMs, its invariants are too brittle when scaled down.
+While WebNorm functions well with powerful external LLMs, its constraints are too brittle when scaled down.
 By contrast, our techniques—field clustering, attack generation, and prompt refinement—enable small models to remain competitive, supporting practical local deployment.
 
 \finding{\textbf{RQ4:} Simply substituting smaller LLMs into WebNorm leads to severe performance degradation, highlighting the necessity of our architectural innovations for making lightweight deployment viable.}
+

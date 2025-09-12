@@ -6,18 +6,18 @@
     \myfigfontsize
     \begin{tabular}{p{0.8cm}p{5.2cm}p{6.5cm}}
         \toprule
-        \textbf{ID} & \textbf{Category}                               & \textbf{Usage in Our Framework}                                                         \\
+        \textbf{ID} & \textbf{Category}                               & \textbf{Usage in Our Framework}                                                       \\
         \midrule
-        API1        & Broken Object Level Authorization               & Used. generates abnormal logs where access control invariants are bypassed.             \\
-        API2        & Broken Authentication                           & Used. simulates login/session anomalies not captured by current invariants.             \\
-        API3        & Broken Object Property Level Authorization      & Used. focuses on tampering with specific fields in objects.                             \\
-        API4        & Unrestricted Resource Consumption               & Excluded. requires modeling frequency/traffic features.                                 \\
-        API5        & Broken Function Level Authorization             & Used. abnormal logs where high-privilege functions are exposed to low-privilege actors. \\
-        API6        & Unrestricted Access to Sensitive Business Flows & Used. simulates bypasses of workflow invariants.                                        \\
-        API7        & Server-Side Request Forgery                     & Used. generates adversarial logs where external calls are injected.                     \\
-        API8        & Security Misconfiguration                       & Used. models cases where abnormal settings or defaults appear in logs.                  \\
-        API9        & Improper Inventory Management                   & Excluded. relies on large-scale endpoint enumeration patterns.                          \\
-        API10       & Unsafe Consumption of APIs                      & Used. synthesizes abnormal logs involving unvalidated or malicious upstream data.       \\
+        API1        & Broken Object Level Authorization               & Used. generates attack logs where access control constraints are bypassed.             \\
+        API2        & Broken Authentication                           & Used. simulates login/session anomalies not captured by current constraints.           \\
+        API3        & Broken Object Property Level Authorization      & Used. focuses on tampering with specific fields in objects.                           \\
+        API4        & Unrestricted Resource Consumption               & Excluded. requires modeling frequency/traffic features.                               \\
+        API5        & Broken Function Level Authorization             & Used. attack logs where high-privilege functions are exposed to low-privilege actors. \\
+        API6        & Unrestricted Access to Sensitive Business Flows & Used. simulates bypasses of workflow constraints.                                      \\
+        API7        & Server-Side Request Forgery                     & Used. generates adversarial logs where external calls are injected.                   \\
+        API8        & Security Misconfiguration                       & Used. models cases where abnormal settings or defaults appear in logs.                \\
+        API9        & Improper Inventory Management                   & Excluded. relies on large-scale endpoint enumeration patterns.                        \\
+        API10       & Unsafe Consumption of APIs                      & Used. synthesizes attack logs involving unvalidated or malicious upstream data.       \\
         \bottomrule
     \end{tabular}
 \end{table}

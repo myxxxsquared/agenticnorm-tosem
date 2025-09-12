@@ -11,8 +11,8 @@ Logs record the actual data exchanged through these APIs, usually including the 
 Thus, logs are commonly represented in structured JSON format.
 
 Figure~\ref{fig:motivating_example} shows a simplified version of the relevant log entries, while the full logs are available in our anonymous artifact~\cite{agenticnorm-website}.
-In our example, when the user retrieves refundable tickets, the frontend calls the \texttt{/api/v1/queryOrders} (abbrivated as  \texttt{queryOrders}) API (\ding{192} step in Figure~\ref{fig:motivating_example}), which returns a list of ticket orders.
-When the user selects a ticket to cancel, the frontend calls the \texttt{/api/v1/cancelOrder} (abbrivated as \texttt{cancelOrder}) API (\ding{193} step in Figure~\ref{fig:motivating_example}).
+In our example, when the user retrieves refundable tickets, the frontend calls the \texttt{/api/v1/queryOrders} (abbreviated as  \texttt{queryOrders}) API (\ding{192} step in Figure~\ref{fig:motivating_example}), which returns a list of ticket orders.
+When the user selects a ticket to cancel, the frontend calls the \texttt{/api/v1/cancelOrder} (abbreviated as \texttt{cancelOrder}) API (\ding{193} step in Figure~\ref{fig:motivating_example}).
 During invoking the \texttt{queryOrders} API, the backend returns a list of refundable tickets in the \texttt{results} field, each identified by a unique \texttt{id}.
 When invoking the \texttt{cancelOrder} API, the frontend provides an \texttt{orderId} in the request arguments to specify which ticket to cancel.
 
@@ -28,22 +28,18 @@ For example, the attacker may replace the valid \texttt{orderId} with an arbitra
 This manipulation allows the attacker to cancel a ticket they do not own or to repeat a cancellation that should not be permitted.
 Such behavior can cause duplicate refunds and financial losses, creating significant risks to system security and integrity.
 
-% The relation that \texttt{cancelOrder.arguments.orderId} must match one of \texttt{queryOrders.results[].id} is an example of a cross-API dependency. 
-% WebNorm~\cite{liao2024detecting} refers to such relations as \emph{dependencies} and identifies them via program analysis, source code instrumentation, or other static/dynamic methods. 
-% Once the dependency is known, any violation observed in the logs can be flagged as abnormal behavior.  
-
 \subsection{Existing Approaches}
 Existing log-based anomaly detection methods fall into two categories:
-(1) \textbf{Model-learning-based detectors}, which learn embeddings or features from normal and abnormal logs to classify anomalies; and
-(2) \textbf{Invariant-learning-based detectors}, which derive semantic invariants from logs and flag violations.
+(1) \textbf{Model-learning-based detectors}, which learn embeddings or features from normal and attack logs to classify anomalies; and
+(2) \textbf{Invariant-learning-based detectors}, which derive semantic constraints from logs and flag violations.
 
-Model-learning-based detectors struggle in this scenario because normal and abnormal logs differ in only a few fields, making them nearly indistinguishable in embedding space.
+Model-learning-based detectors struggle in this scenario because normal and attack logs differ in only a few fields, making them nearly indistinguishable in embedding space.
 Furthermore, anomalies may be buried within long sequences of interleaved events, diluting the anomaly signal.
 
-WebNorm~\cite{liao2024detecting} addresses this limitation by learning semantic invariants from logs with the help of LLMs.
+WebNorm~\cite{liao2024detecting} addresses this limitation by learning semantic constraints from logs with the help of LLMs.
 For example, it can infer the constraint that \texttt{cancelOrder.arguments.orderId} must match one of \texttt{queryOrders.results[].id}.
-By mapping code-level data flows to log fields and validating them as invariants, WebNorm can flag any violations as anomalies.
-In our motivating case, WebNorm successfully learns the cross-API dependency and detects the abnormal cancellation attempt.
+By mapping code-level data flows to log fields and validating them as constraints, WebNorm can flag any violations as anomalies.
+In our motivating case, WebNorm successfully learns the cross-API dependency and detects the attack cancellation attempt.
 
 \input{floats/02-04-number-of-tokens-in-input}
 
@@ -52,35 +48,35 @@ In our motivating case, WebNorm successfully learns the cross-API dependency and
 Despite its effectiveness, WebNorm suffers from three key limitations:
 \begin{itemize}
     \item \textbf{Dependence on program analysis and source code}: WebNorm requires access to and instrumentation of frontend/backend code, which is costly, fragile under rapid iteration, and infeasible for closed-source or third-party systems.
-    \item \textbf{Reliance on heavyweight proprietary LLMs}: invariant synthesis depends on remote, closed-source models, leading to cost and privacy risks. However, if directly replaced with a local deployable model, the long and nested logs often exceed the ability of small models, reducing effectiveness. Table~\ref{tab:webnorm-input-tokens} shows the number of input tokens for two datasets. The mean input length for \trainticket is $2.40 \times 10^5$ tokens, far exceeding the context window of compact models due to very lengthy logs. Even for \nicefish, which has shorter logs, the mean input length is $1.50 \times 10^4$ tokens, still too long for compact models.
-    \item \textbf{Prompt sensitivity}: correct invariants often appear only with carefully engineered prompts, making the process labor-intensive, project-specific, and difficult to generalize. Figure~\ref{fig:webnorm-prompt} illustrates the direct mapping between prompt instructions and generated invariants. The generated invariants strictly adhere to the specified prompt and are limited to the constraint types explicitly mentioned. As a result, WebNorm may miss important invariants not covered by the prompt, leading to undetected anomalies.
+    \item \textbf{Reliance on heavyweight proprietary LLMs}: invariant synthesis depends on remote, closed-source models, leading to cost and privacy risks. However, if directly replaced with a local deployable model, the long and nested logs often exceed the ability of small models, reducing effectiveness. Table~\ref{tab:webnorm-input-tokens} shows the number of input tokens for two datasets. The mean input length for \trainticket is $2.40 \times 10^5$ tokens, far exceeding the context window of lightweight models due to very lengthy logs. Even for \nicefish, which has shorter logs, the mean input length is $1.50 \times 10^4$ tokens, still too long for lightweight models.
+    \item \textbf{Prompt sensitivity}: correct constraints often appear only with carefully engineered prompts, making the process labor-intensive, project-specific, and difficult to generalize. Figure~\ref{fig:webnorm-prompt} illustrates the direct mapping between prompt instructions and generated constraints. The generated constraints strictly adhere to the specified prompt and are limited to the constraint types explicitly mentioned. As a result, WebNorm may miss important constraints not covered by the prompt, leading to undetected anomalies.
 \end{itemize}
 
 \subsection{Our Approach}
 
 We aim to preserve WebNorm’s strength in capturing \emph{consistency constraints} while addressing its limitations.
-Unlike WebNorm, our approach relies only on logs (without program analysis), operates primarily with compact, locally deployable LLMs, and mitigates prompt fragility by automatically refining prompts through generated abnormal logs.
+Unlike WebNorm, our approach relies only on logs (without program analysis), operates primarily with lightweight, locally deployable LLMs, and mitigates prompt sensitivity by automatically refining prompts through generated attack logs.
 
-Specifically, we propose two techniques to enable anomaly detection with compact models:
+Specifically, we propose two techniques to enable anomaly detection with lightweight models:
 
 \begin{itemize}
     \item \textbf{Eliminating source-code dependence.} Instead of relying on program instrumentation to build log–code mappings, \lighttechname directly infers constraints from raw logs. It discovers inter-API relationships using frequency-based analysis of co-occurring calls and derives constraints purely from runtime behaviors, enabling applicability even when source code is unavailable.
-    \item \textbf{Field Clustering.} Each JSON log entity is expanded into flattened fields and grouped into small, semantically coherent clusters. Instead of feeding the full log into the model, each cluster is processed independently. This reduces context length, highlights meaningful field-level relationships, and allows compact models to handle long and complex logs more effectively.
-    \item \textbf{Prompt Refinement via Generated Attacks.} To reduce reliance on manual prompt engineering, we design prompts that guide the LLM to generate abnormal logs. These generated logs expose missing constraints, which are then used to refine the prompts. The refined prompts enable compact models to capture project-specific invariants more accurately and robustly.
+    \item \textbf{Field Clustering.} Each JSON log entity is expanded into flattened fields and grouped into small, semantically coherent clusters. Instead of feeding the full log into the model, each cluster is processed independently. This reduces context length, highlights meaningful field-level relationships, and allows lightweight models to handle long and complex logs more effectively.
+    \item \textbf{Prompt Refinement via Generated Attacks.} To reduce reliance on manual prompt engineering, we design prompts that guide the LLM to generate attack logs. These generated logs expose missing constraints, which are then used to refine the prompts. The refined prompts enable lightweight models to capture project-specific constraints more accurately and robustly.
 \end{itemize}
 
 \paragraph{Field Clustering}
-To efficiently adapt logs for compact models, we expand each JSON record into individual fields and then group comparable ones into clusters.
+To efficiently adapt logs for lightweight models, we expand each JSON record into individual fields and then group comparable ones into clusters.
 Figure~\ref{fig:motivating_example_clustering} illustrates this process. Each cluster is given as a separate input to the LLM, ensuring that related fields are explicitly compared while avoiding unnecessary context.
 
 \input{floats/02-02-motivation-example-clustering}
 
 \paragraph{Prompt Refinement via Generated Attacks}
-Compact models generally lack strong reasoning ability and cannot reliably infer constraints from fixed prompts.
+Lightweight models generally lack strong reasoning ability and cannot reliably infer constraints from fixed prompts.
 Manual prompt adjustment is time-consuming and project-specific.
 Figure~\ref{fig:motivating_example_prompt} (left) shows the original WebNorm prompt, which depends on handcrafted instructions and examples.
-Our approach (middle) augments the prompt with additional instructions that guide the model to generate abnormal logs. These abnormal logs force the model to reason about field relationships—for example, checking consistency between joined fields and their originals.
-As shown in Figure~\ref{fig:motivating_example_prompt} (right), the refined prompt enables the compact model to generate invariants that successfully capture the required field-level constraints.
+Our approach (middle) augments the prompt with additional instructions that guide the model to generate attack logs. These attack logs force the model to reason about field relationships—for example, checking consistency between joined fields and their originals.
+As shown in Figure~\ref{fig:motivating_example_prompt} (right), the refined prompt enables the lightweight model to generate constraints that successfully capture the required field-level constraints.
 
 \input{floats/02-03-motivation-example-prompt}
 

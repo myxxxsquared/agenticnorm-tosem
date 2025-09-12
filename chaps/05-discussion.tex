@@ -4,7 +4,7 @@
 
 \subsection{Impact of Adversarial Attacks on Prompt Refinement}
 
-Adversarial attacks play a crucial role in refining the prompts used for invariant generation. At the initial stage (Round 0), the prompt may fail to capture critical invariants, leading to missed detections for certain types of tamper attacks. However, when we introduce adversarial attacks that exploit these weaknesses, the system is forced to adapt: the failure cases serve as concrete counterexamples that guide the prompt-refinement process. After just one refinement iteration (Round 1), the updated prompt can successfully detect the previously missed anomaly.
+Adversarial attacks play a crucial role in refining the prompts used for invariant generation. At the initial stage (Round 0), the prompt may fail to capture critical constraints, leading to missed detections for certain types of tamper attacks. However, when we introduce adversarial attacks that exploit these weaknesses, the system is forced to adapt: the failure cases serve as concrete counterexamples that guide the prompt-refinement process. After just one refinement iteration (Round 1), the updated prompt can successfully detect the previously missed anomaly.
 
 For example, in Round 0, \lighttechname fails to detect an attack where \texttt{arguments.oti.assurance} is set to a negative value (\texttt{-2}). After one iteration of adversarial attack–guided refinement, the refined prompt introduces explicit range constraints on numeric fields, which leads to the learned invariant \texttt{assert log["arguments.oti.assurance"] > 0}. This invariant enables the system to identify the anomaly that was previously overlooked. More detailed examples can be found in our repository~\cite{agenticnorm-website}.
 
@@ -17,9 +17,9 @@ This self-improving loop demonstrates how adversarial attacks not only test the 
 
 \input{floats/05-02-tokens}
 
-Figure~\ref{fig:rounds-of-refinement} shows the effect of iterative prompt refinement on detection performance across different models. Recall improves consistently in the early rounds, with most models reaching their highest performance by Round 5–6. After this point, additional refinements no longer yield noticeable gains, and performance stabilizes at a plateau.
+Figure~\ref{fig:rounds-of-refinement} shows the effect of iterative prompt refinement on detection performance across different models. Recall improves consistently in the early rounds, with most models reaching their highest performance by Round 5–6. After this point, additional refinements no longer yield noticeable gains, and performance stabilizes after 5-6 rounds.
 
-This trend aligns with Figure~\ref{fig:number-of-tokens}, which shows that the number of tokens in the refined prompts continues to increase with each round. While longer prompts provide more detailed constraints, they eventually add little marginal benefit, indicating that the models have already captured the critical invariants needed for detection. Beyond this stage, further refinement mainly increases prompt complexity without improving effectiveness.
+This trend aligns with Figure~\ref{fig:number-of-tokens}, which shows that the number of tokens in the refined prompts continues to increase with each round. While longer prompts provide more detailed constraints, they eventually add little marginal benefit, indicating that the models have already captured the critical constraints needed for detection. Beyond this stage, further refinement mainly increases prompt complexity without improving effectiveness.
 
 \subsection{False Negatives}
 

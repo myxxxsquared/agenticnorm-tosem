@@ -13,13 +13,13 @@ Model-learning-based approaches emerged with the advent of data-driven methods, 
 A large body of work in this direction adopts deep learning models to classify log sequences as normal or anomalous. 
 Recurrent architectures have been widely used to capture sequential dependencies~\cite{du2017deeplog,brown2018recurrent}, while CNN-based solutions exploit local contextual signals~\cite{lu2018detecting,fu2023mlog}. 
 Recent advances leverage Transformers~\cite{huang2020hitanomaly,guo2024logformer}, graph neural networks~\cite{zhang2022deeptralog}, or pretrained language models tailored for log data~\cite{guo2021logbert,han2023loggpt}. 
-In addition, training-free retrieval methods have been proposed to exploit pre-trained models without fine-tuning, thereby reducing training costs and emphasizing token-level semantics~\cite{no2024training}. 
+In addition, training-free retrieval methods have been proposed to exploit pre-trained models without fine-tuning, thereby reducing training costs and emphasizing token-level semantics~\cite{no2023rapid}. 
 Other works focus on improving data efficiency, for example by employing pseudo anomaly generation to augment scarce training data~\cite{lin2024fastlogad} or by integrating active learning into retrieval-augmented generation frameworks for anomaly detection~\cite{duan2025eagerlog}. 
 Despite their predictive strength, these neural methods often act as black boxes, providing little insight into the root cause of anomalies and occasionally overlooking subtle yet critical deviations.
 
 To address the limitations of black-box models, a complementary research direction emphasizes \emph{explainability} through rule-learning-based methods. 
 This line of work constructs explicit normality constraints that enable both anomaly detection and interpretable explanations. 
-The most prominent example is WebNorm~\cite{liao2024detecting}, which encodes behavioral invariants of web systems as first-order logic rules derived from logs. 
+The most prominent example is WebNorm~\cite{liao2024detecting}, which encodes behavioral constraints of web systems as first-order logic rules derived from logs. 
 While effective, WebNorm relies heavily on source code analysis and large external models, and it does not explicitly enforce the consistency between logs and their underlying data sources. 
 Our work builds on this direction, proposing techniques that refine normality inference with lightweight, deployable models and enhanced relational reasoning.
 
@@ -29,14 +29,14 @@ Prior research has extensively explored automated vulnerability discovery throug
 These methods typically mutate request sequences or payloads to trigger failures, guided by API specifications, dependency constraints~\cite{viglianisi2020resttestgen,martin2020restest}, or machine learning predictions~\cite{lyu2023miner}. 
 Enhanced strategies further refine the fuzzing process to target specific classes of vulnerabilities such as injection attacks or cross-site scripting~\cite{deng2023nautilus,du2024vulnerability}.
 
-While fuzzing uncovers flaws through active probing, our approach takes a complementary perspective: we aim to strengthen API security by learning invariants that characterize normal interaction patterns. 
+While fuzzing uncovers flaws through active probing, our approach takes a complementary perspective: we aim to strengthen API security by learning constraints that characterize normal interaction patterns. 
 By detecting deviations from these learned normalities, we provide a systematic way to capture tampering behaviors that bypass conventional fuzzing-based detection.
 
 \paragraph{Comparison to Our Work.}
 Existing solutions for log anomaly detection and RESTful API security either emphasize predictive accuracy through deep learning or rely on fuzzing techniques to expose vulnerabilities. 
-While effective to some extent, these approaches face notable limitations: deep neural methods lack interpretability and often miss subtle invariants, whereas fuzzing uncovers vulnerabilities opportunistically but does not generalize to unseen tampering strategies. 
+While effective to some extent, these approaches face notable limitations: deep neural methods lack interpretability and often miss subtle constraints, whereas fuzzing uncovers vulnerabilities opportunistically but does not generalize to unseen tampering strategies. 
 WebNorm represents an important step toward explainable anomaly detection, but its reliance on heavyweight, closed-source models and program source code restricts its applicability in practice. 
 
 In contrast, our approach focuses on lightweight, locally deployable models integrated into a multi-agent framework. 
-By introducing field clustering, we address the long-context challenge inherent in compact models, and by leveraging an iterative attack-driven prompt refinement loop, we enable the system to self-improve without extensive manual intervention. 
+By introducing field clustering, we address the long-context challenge inherent in lightweight models, and by leveraging an iterative attack-driven prompt refinement loop, we enable the system to self-improve without extensive manual intervention. 
 This combination not only preserves explainability but also ensures that detection can be deployed securely and efficiently in real-world settings.

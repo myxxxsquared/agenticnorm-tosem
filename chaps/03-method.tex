@@ -8,20 +8,20 @@ Figure~\ref{fig:method_overview} provides an overview of the workflow.
 
 \subsection{Workflow}
 
-A central challenge in log-based anomaly detection is that prompt quality strongly influences detection results. Fixed prompts are brittle and may fail to capture certain invariants, leading to missed anomalies. To address this limitation, we propose an iterative loop in which attack generation and prompt adjustment are tightly coupled. The loop continuously strengthens prompts by exposing them to adversarial scenarios that exploit their current weaknesses. This process consists of three main modules, forming an iterative loop (Figure~\ref{fig:method_overview}):
+A central challenge in log-based anomaly detection is that prompt quality strongly influences detection results. Fixed prompts are brittle and may fail to capture certain constraints, leading to missed anomalies. To address this limitation, we propose an iterative loop in which attack generation and prompt adjustment are tightly coupled. The loop continuously strengthens prompts by exposing them to adversarial scenarios that exploit their current weaknesses. This process consists of three main modules, forming an iterative loop (Figure~\ref{fig:method_overview}):
 
 \lighttechname consists of three main modules:
 \begin{itemize}
-    \item \textbf{Constraint Learning}: derives invariants from normal logs.
-    \item \textbf{Attack Generation}: synthesizes abnormal logs that break or bypass the learned invariants.
+    \item \textbf{Constraint Learning}: derives constraints from normal logs.
+    \item \textbf{Attack Generation}: synthesizes attack logs that break or bypass the learned constraints.
     \item \textbf{Prompt Refinement}: updates LLM prompts using feedback from undetected attacks.
 \end{itemize}
 
-\lighttechname begins by deriving invariants from normal logs using an initial prompt in the \textbf{Constraint Learning} module.
-Then, the \textbf{Attack Generation} module synthesizes abnormal logs that break or bypass the learned invariants.
+\lighttechname begins by deriving constraints from normal logs using an initial prompt in the \textbf{Constraint Learning} module.
+Then, the \textbf{Attack Generation} module synthesizes attack logs that break or bypass the learned constraints.
 Finally, the \textbf{Prompt Refinement} module updates LLM prompts using feedback from undetected attacks.
 
-This adversarial loop allows prompts to evolve dynamically. Each cycle expands the attack space by introducing logs that specifically target the weaknesses of the current invariants, and in turn strengthens the prompts by incorporating counterexamples. Over time, this reduces reliance on manual intervention and improves robustness against both known and novel attacks.
+This adversarial loop allows prompts to evolve dynamically. Each cycle expands the attack space by introducing logs that specifically target the weaknesses of the current constraints, and in turn strengthens the prompts by incorporating counterexamples. Over time, this reduces reliance on manual intervention and improves robustness against both known and novel attacks.
 
 Next, we break down each module in detail.
 
@@ -34,7 +34,7 @@ This requires us to replace several of its original components.
 Figure~\ref{fig:method_constraint} illustrates the process of constraint learning.
 First, \lighttechname discovers relationships between APIs through frequency-based analysis.
 Next, to adapt to lightweight LLMs, \lighttechname applies \emph{Field Clustering}, which reduces the length of the input context per query, thereby lowering the workload of the model while improving its ability to identify constraints.
-Finally, \lighttechname adopts a similar approach to WebNorm for detecting both intra-API and inter-API constraints, using an LLM to extract invariants and generate corresponding Python checking code.
+Finally, \lighttechname adopts a similar approach to WebNorm for detecting both intra-API and inter-API constraints, using an LLM to extract constraints and generate corresponding Python checking code.
 Unlike WebNorm, however, the prompts employed here are not manually designed; instead, they are obtained from the iterative refinement process described later, making them better suited for lightweight LLMs.
 
 \subsubsection{Frequency Analysis}
@@ -53,9 +53,9 @@ Then, the LLM is used to verify and filter out spurious relations.
 
 \subsubsection{Field Clustering}
 
-Lightweight LLMs are constrained by limited context windows, making it infeasible to directly process lengthy and complex logs. To address this limitation, we introduce \emph{field clustering}, a technique that decomposes log entries into semantically related groups. This allows invariants to be extracted while ensuring that the input remains within the restricted context length.
+Lightweight LLMs are constrained by limited context windows, making it infeasible to directly process lengthy and complex logs. To address this limitation, we introduce \emph{field clustering}, a technique that decomposes log entries into semantically related groups. This allows constraints to be extracted while ensuring that the input remains within the restricted context length.
 
-To this end, \lighttechname first analyzes the structure of logs, which often contain nested dictionaries and arrays. It then applies a set of expansion rules to flatten these structures into atomic fields. Finally, it employs an LLM to cluster the expanded fields based on semantic relatedness, forming compact groups that can be processed within the context limits.
+To this end, \lighttechname first analyzes the structure of logs, which often contain nested dictionaries and arrays. It then applies a set of expansion rules to flatten these structures into atomic fields. Finally, it employs an LLM to cluster the expanded fields based on semantic relatedness, forming lightweight groups that can be processed within the context limits.
 
 Figure~\ref{fig:motivating_example_clustering} provides an example of the field clustering process. The original log contains nested dicts (e.g., \texttt{arguments}, \texttt{qi}, etc.) and arrays (e.g., \texttt{results}). These structures are first expanded into flat fields (e.g., \texttt{arguments.loginId}, \texttt{arguments.orderId}, etc.). Finally, the expanded fields are clustered into semantically related groups (e.g., the cluster of \texttt{arguments.loginId}, \texttt{env.userId}, \texttt{qi.accountId} represents user identifiers).
 
@@ -63,3 +63,80 @@ Formally, we show the field clustering process in three steps: Log Structure Dis
 Log Structure Discovery identifies the schema of logs and their data types.
 Expansion applies a set of rules to flatten nested structures into atomic fields.
 Clustering groups the expanded fields into semantically related clusters using an LLM.
+
+
+\input{floats/03-08-grammar}
+
+\paragraph{Log Structure Discovery.}
+Each API may produce logs with diverse structures, including nested dictionaries and arrays. We first parse the logs to uncover their structural schema and data types. For each API, \lighttechname analyzes all log entries and infers a unified schema that captures the common structure, represented as fields and their associated types. Formally, we define a recursive grammar for data types shown in Figure~\ref{fig:log-data-grammar}.
+
+Here, \texttt{unknown} denotes cases where the log structure cannot be precisely determined (e.g., due to ambiguity or inconsistency). By aggregating logs across APIs, \lighttechname derives unified schemas that reconcile structural variations.
+
+\paragraph{Expansion.}
+After schema discovery, we apply a set of expansion rules to transform nested structures into flat fields. This ensures that all relevant information is explicitly represented, thereby facilitating clustering and invariant extraction.
+
+The rules are as follows:
+\begin{itemize}
+    \item \textbf{Dict Expansion}: For a dictionary value, each key is concatenated with its parent field using a dot ``.'' separator. Formally, \texttt{d: dict[key: value]} is expanded into \texttt{"d.key": value}.
+    \item \textbf{Array of Dict Expansion}: For an array of dictionaries, each dictionary key is expanded to a new array field. Formally, \texttt{a: array[dict[key: value]]} is expanded into \texttt{"a[].key": array[value]}.
+    \item \textbf{Field Joining}: In certain cases, meaningful semantics emerge when fields from different structural levels are \emph{joined}. Specifically, if an outer field and an inner field share a common key (e.g., an identifier), we match the entry and promote it as a new joined field.
+\end{itemize}
+
+Here are some examples of the expansion rules in motivating example:
+\begin{itemize}
+    \item \textbf{Dict Expansion}: \texttt{arguments: dict[loginId: string, orderId: string]} is expanded into \texttt{"arguments.loginId": string, "arguments.orderId": string}.
+    \item \textbf{Array of Dict Expansion}: \texttt{results: array[dict[id: number, status: string]]} is expanded into \texttt{"results[].id": array[number], "results[].status": array[string]}.
+    \item \textbf{Field Joining}: \texttt{arguments.orderId} can be joined with the elements of \texttt{results} via the \texttt{id} field. The result is a new joined field: \texttt{"results['joined']": dict[id: number, status: string]}.
+\end{itemize}
+
+\paragraph{Clustering.}
+The expansion step yields a large set of atomic fields, which are then organized into semantically coherent groups. To manage context length effectively, we cluster fields based on semantic relatedness. Instead of relying on hand-crafted heuristics, we employ an LLM to partition the expanded fields into clusters. For example, identifiers such as \verb|user_id|, \verb|session_id|, and joined fields with matching IDs form one cluster, while numerical values such as \verb|price|, \verb|amount|, and \verb|discount| form another. This LLM-based clustering leverages semantic knowledge to generate meaningful and task-relevant partitions.
+
+Through this pipeline, lengthy and complex logs are transformed into compact, semantically organized structures, enabling lightweight LLMs to effectively generate invariants without exceeding context limitations.
+
+\subsubsection{Invariant Generation}
+
+The invariant generation process of \lighttechname closely resembles that of WebNorm, with the key distinction that its prompts are not manually crafted but automatically derived through the subsequent attack-generation and prompt-refinement loop, making them more suitable for lightweight LLMs. Given the structured logs, \lighttechname first instructs the LLM to produce candidate invariants in the form of executable rules that capture constraints across different fields. These candidates are then iteratively evaluated against training logs, and any violations on normal cases are fed back to the LLM along with contextual information, prompting it to revise or discard the problematic invariants. Through this feedback loop, the system gradually converges to a compact and reliable set of invariants that preserve both structural correctness and semantic consistency.
+
+\subsection{Attack Generation}
+
+Based on the extracted invariants and a pool of normal logs, we deliberately synthesize attack log entries that are difficult for the current invariants to capture. The attack generation process is anchored in the \emph{OWASP API Security Top 10}, one of the most authoritative industry standards for categorizing API vulnerabilities. To align with our log-based setting, we exclude categories that depend primarily on traffic volume or usage frequency (e.g., excessive resource consumption).
+
+The \emph{OWASP API Security Top 10}, maintained by the Open Worldwide Application Security Project (OWASP), serves as the de facto reference for identifying and evaluating API vulnerabilities. It is widely adopted by practitioners, penetration testers, and auditors as a standard checklist for assessing the security of modern web APIs. Its categories are derived from extensive industry data and community feedback, collectively covering the vast majority of real-world API attacks observed in practice.
+
+In our framework, we adopt the OWASP API Security Top 10 as the foundation for guiding attack synthesis. Because our anomaly detection operates at the log level rather than the traffic level, frequency-dependent categories (e.g., rate limiting and resource exhaustion) are excluded. For the remaining categories, we refine them into finer-grained subcategories using LLM-based analysis, ensuring that each synthesized attack corresponds to the log semantics of the target system. Table~\ref{tab:owasptop10} summarizes the OWASP API Security Top 10 categories and indicates their usage in our pipeline.
+
+\input{floats/03-03-attack-gen}
+
+\input{floats/03-06-prompt-attack-gen}
+
+Concretely, for each API and each API pair, we first sample a set of normal log entries. Guided by the OWASP classification and the descriptions of each attack category, we then prompt an LLM to generate corresponding attack log entries. The generated logs are required to bypass the existing invariants whenever possible. These attack entries, together with the sampled normal logs, form a labeled dataset that is subsequently used for prompt refinement. The prompt used for attack generation is shown in Figure~\ref{fig:prompt}, with detailed attack strategies and input/output examples provided in our artifact repository~\cite{agenticnorm-website}.
+
+By grounding attack generation in this taxonomy, our framework inherits both breadth and credibility: it covers a wide spectrum of realistic API threats while remaining fully compatible with our log-based invariant detection setting.
+
+
+\subsection{Prompt Refinement}
+
+
+After attack generation, we obtain a labeled dataset consisting of both normal and attack logs. Our next task is to refine the prompts used in invariant generation, so that they can better capture the constraints needed to detect the synthesized attacks. The refinement process is similar to learning a model from labeled data, where the input dataset is the logs and the labels are whether each log is normal or attack. The difference is that instead of adjusting model parameters by policy gradient or backpropagation, we update the prompt text itself using an LLM.
+
+\input{floats/03-04-refinement.tex}
+
+
+\input{floats/03-07-prompt-refine}
+
+Algorithm~\ref{alg:prompt-refinement} outlines the prompt refinement process. For each normal-attack log pair in the dataset, we feed it into an LLM along with the current prompt, asking it to generate a modification suggestion. The LLM analyzes the pair and identifies what changes to the prompt could help distinguish between the normal and attack cases. This may involve adding new clauses, modifying existing ones, or removing irrelevant parts. Figure~\ref{fig:prompt-refine} shows an abbreviated version of the prompt used for refinement, with the complete version available in our artifact repository~\cite{agenticnorm-website}.
+
+\subsection{Implementation Details}
+
+\paragraph{LLMs Used.}
+\lighttechname is designed to work with lightweight, locally deployable LLMs.
+In our study, we observed that the tasks of \emph{Attack Generation} and \emph{Prompt Refinement} place heavier demands on the neural models, as they require more complex reasoning and creative generation. Therefore, we employ larger-scale models for these two tasks, specifically the open-source DeepSeek-V3.
+For \emph{Constraint Learning}, the requirements are relatively lower, and we adopt smaller models to balance efficiency and effectiveness. In this work, we experimented with multiple models for constraint learning, including \texttt{gpt-oss-120b}, \texttt{gpt-oss-20b}, \texttt{gemma-3-4b}, and \texttt{DeepSeek-V3}. This hybrid strategy allows us to maintain strong performance while reducing overall system resource consumption and deployment complexity.
+
+\paragraph{Hyperparameters.}
+For frequency-based API relation extraction, we set the sliding window size to 20 and select the top-5 most frequent APIs as related APIs.
+In field clustering, the maximum expansion depth for nested dictionaries is limited to 3, in order to avoid field explosion from excessive expansion.
+For each API, we generate up to 10 normal logs and 10 attack logs for use in prompt refinement.
+Prompt refinement is iterated for 10 rounds to ensure that the prompts sufficiently adapt to the synthesized attack scenarios.
+Further experimental details can be found in our code repository~\cite{agenticnorm-website}.
