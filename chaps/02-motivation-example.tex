@@ -31,7 +31,7 @@ Such behavior can cause duplicate refunds and financial losses, creating signifi
 \subsection{Existing Approaches}
 Existing log-based anomaly detection methods fall into two categories:
 (1) \textbf{Model-learning-based detectors}, which learn embeddings or features from normal and attack logs to classify anomalies; and
-(2) \textbf{Invariant-learning-based detectors}, which derive semantic constraints from logs and flag violations.
+(2) \textbf{Rule-learning-based detectors}, which derive semantic constraints from logs and flag violations.
 
 Model-learning-based detectors struggle in this scenario because normal and attack logs differ in only a few fields, making them nearly indistinguishable in embedding space.
 Furthermore, anomalies may be buried within long sequences of interleaved events, diluting the anomaly signal.
@@ -48,7 +48,7 @@ In our motivating case, WebNorm successfully learns the cross-API dependency and
 Despite its effectiveness, WebNorm suffers from three key limitations:
 \begin{itemize}
     \item \textbf{Dependence on program analysis and source code}: WebNorm requires access to and instrumentation of frontend/backend code, which is costly, fragile under rapid iteration, and infeasible for closed-source or third-party systems.
-    \item \textbf{Reliance on heavyweight proprietary LLMs}: invariant synthesis depends on remote, closed-source models, leading to cost and privacy risks. However, if directly replaced with a local deployable model, the long and nested logs often exceed the ability of small models, reducing effectiveness. Table~\ref{tab:webnorm-input-tokens} shows the number of input tokens for two datasets. The mean input length for \trainticket is $2.40 \times 10^5$ tokens, far exceeding the context window of lightweight models due to very lengthy logs. Even for \nicefish, which has shorter logs, the mean input length is $1.50 \times 10^4$ tokens, still too long for lightweight models.
+    \item \textbf{Reliance on heavyweight proprietary LLMs}: constraints synthesis depends on remote, proprietary LLMs, leading to cost and privacy risks. However, if directly replaced with a local deployable model, the long and nested logs often exceed the ability of small models, reducing effectiveness. Table~\ref{tab:webnorm-input-tokens} shows the number of input tokens for two datasets. The mean input length for \trainticket is $2.40 \times 10^5$ tokens, far exceeding the context window of lightweight models due to very lengthy logs. Even for \nicefish, which has shorter logs, the mean input length is $1.50 \times 10^4$ tokens, still too long for lightweight models.
     \item \textbf{Prompt sensitivity}: correct constraints often appear only with carefully engineered prompts, making the process labor-intensive, project-specific, and difficult to generalize. Figure~\ref{fig:webnorm-prompt} illustrates the direct mapping between prompt instructions and generated constraints. The generated constraints strictly adhere to the specified prompt and are limited to the constraint types explicitly mentioned. As a result, WebNorm may miss important constraints not covered by the prompt, leading to undetected anomalies.
 \end{itemize}
 
@@ -73,7 +73,7 @@ Figure~\ref{fig:motivating_example_clustering} illustrates this process. Each cl
 
 \paragraph{Prompt Refinement via Generated Attacks}
 Lightweight models generally lack strong reasoning ability and cannot reliably infer constraints from fixed prompts.
-Manual prompt adjustment is time-consuming and project-specific.
+Manual prompt adjustment is both time-consuming and highly project-specific.
 Figure~\ref{fig:motivating_example_prompt} (left) shows the original WebNorm prompt, which depends on handcrafted instructions and examples.
 Our approach (middle) augments the prompt with additional instructions that guide the model to generate attack logs. These attack logs force the model to reason about field relationships—for example, checking consistency between joined fields and their originals.
 As shown in Figure~\ref{fig:motivating_example_prompt} (right), the refined prompt enables the lightweight model to generate constraints that successfully capture the required field-level constraints.

@@ -5,7 +5,7 @@ Log analysis has emerged as an effective defense by capturing client-server inte
 Two main categories of log analysis methods exist: model-learning-based approaches that train predictive models from normal logs, and rule-learning-based approaches that mine logical constraints from logs.
 However, these two categories have their limitations.
 Model-learning-based methods detect anomalies by training predictive models on normal logs, but they suffer from poor interpretability, high false positive rates, and difficulty in capturing subtle attacks. 
-Rule-learning-based methods provide stronger interpretability by extracting explicit constraints, as exemplified by WebNorm, but they rely heavily on program instrumentation, closed-source large models, and manually engineered prompts.  
+Rule-learning-based methods provide stronger interpretability by extracting explicit constraints, as exemplified by WebNorm, but they rely heavily on program instrumentation, heavyweight proprietary models, and manually engineered prompts.  
 
 In this paper, we present \lighttechname, a lightweight anomaly detection framework built upon lightweight, locally deployable LLMs. 
 \lighttechname avoids program-analysis dependence, removes reliance on heavyweight proprietary models, and mitigates prompt sensitivity through three innovations: 

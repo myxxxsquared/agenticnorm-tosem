@@ -33,7 +33,7 @@ and assign binary labels at the window level.
 \paragraph{Baselines.}
 To demonstrate the effectiveness of \lighttechname,
 we compare against three categories of methods:
-(1) \textit{learning-based baselines}, including LogRobust~\cite{zhang2019robust},
+(1) \textit{model-learning-based baselines}, including LogRobust~\cite{zhang2019robust},
 LogFormer~\cite{guo2024logformer}, and RAPID FastLogAD~\cite{lin2024fastlogad},
 which rely on supervised or semi-supervised learning of log sequences;
 (2) \textit{rule-based approaches}, represented by WebNorm~\cite{liao2024detecting},
@@ -54,7 +54,7 @@ $$\text{Precision} = \dfrac{TP}{TP + FP}, \quad
 \input{floats/04-01-overall}
 
 \paragraph{RQ1: Overall Performance.}
-Table~\ref{tab:overall-eval} summarizes the overall comparison\footnote{We note that our reproduced results of WebNorm differ slightly from those reported in the original paper. After contacting the authors, we confirmed that they updated their dataset, which improved precision but reduced recall. The results shown here reflect this corrected version.}.
+Table~\ref{tab:overall-eval} summarizes the overall comparison\footnote{We note that our reproduced results of WebNorm differ slightly from those reported in the original paper. After contacting the authors, we confirmed that they updated their dataset, which led to improved precision but reduced recall. The results shown here reflect this corrected version.}.
 \lighttechname achieves the highest F1-scores on both \trainticket (0.92) and \nicefish (0.95).
 Some baselines, such as LogFormer and RAPID, obtain relatively high recall
 (e.g., 0.90 on \trainticket and 1.00 on \nicefish for RAPID),
@@ -84,7 +84,7 @@ showing that it provides complementary benefits.
 \input{floats/04-04-tokens}
 
 To further evaluate the effectiveness of field clustering, we analyze the total number of input tokens in the prompts, comparing settings with and without clustering.
-Table~\ref{tab:tokens-comparison} reports the token counts for each invariant generation task. The reduction is particularly pronounced on \trainticket, as its logs contain more fields, and clustering eliminates a larger portion of redundancy. By shortening the token length, the model can process inputs more efficiently, which in turn leads to higher-quality constraints.
+Table~\ref{tab:tokens-comparison} reports the token counts for each constraints generation task. The reduction is particularly pronounced on \trainticket, as its logs contain more fields, and clustering eliminates a larger portion of redundancy. By shortening the token length, the model can process inputs more efficiently, which in turn leads to higher-quality constraints.
 
 \finding{\textbf{RQ2:} Each component of \lighttechname improves performance, with field clustering and prompt refinement being especially crucial.}
 
@@ -110,8 +110,8 @@ without sacrificing detection accuracy.
 To further validate our design, we directly substitute WebNorm’s backbone with a smaller LLM (e.g., \texttt{DeepSeek V3}),
 without applying any of our proposed architectural modifications.
 Performance drops sharply in recall: on \trainticket, recall falls from 0.92 to 0.60, and on \nicefish, from 0.95 to 0.50.
-This experiment shows that naïvely replacing large models with smaller ones is insufficient.
-While WebNorm functions well with powerful external LLMs, its constraints are too brittle when scaled down.
+This experiment shows that simply replacing heavyweight proprietary models with smaller ones is insufficient.
+While WebNorm functions well with powerful heavyweight LLMs, its constraints are too brittle when scaled down.
 By contrast, our techniques—field clustering, attack generation, and prompt refinement—enable small models to remain competitive, supporting practical local deployment.
 
 \finding{\textbf{RQ4:} Simply substituting smaller LLMs into WebNorm leads to severe performance degradation, highlighting the necessity of our architectural innovations for making lightweight deployment viable.}
