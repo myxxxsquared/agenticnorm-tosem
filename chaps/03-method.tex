@@ -134,7 +134,7 @@ Algorithm~\ref{alg:prompt-refinement} outlines the prompt refinement process. Fo
 \paragraph{LLMs Used.}
 \lighttechname is designed to work with lightweight, locally deployable LLMs.
 In our study, we observed that the tasks of \emph{Attack Generation} and \emph{Prompt Refinement} place heavier demands on the neural models, as they require more complex reasoning and creative generation. Therefore, we employ larger-scale models for these two tasks, specifically the open-source DeepSeek-V3.
-For \emph{Constraint Learning}, the requirements are relatively lower, and we adopt smaller models to balance efficiency and effectiveness. In this work, we experimented with multiple models for constraint learning, including \texttt{gpt-oss-120b}, \texttt{gpt-oss-20b}, \texttt{gemma-3-4b}, and \texttt{DeepSeek-V3}. This hybrid strategy allows us to maintain strong performance while reducing overall system resource consumption and deployment complexity.
+For \emph{Constraint Learning}, the requirements are relatively lower, and we adopt smaller models to balance efficiency and effectiveness. In this work, we experimented with multiple models for constraint learning, including \texttt{GPT-OSS-120B}, \texttt{GPT-OSS-20B}, \texttt{Gemma-3-4B}, and \texttt{DeepSeek-V3}. This hybrid strategy allows us to maintain strong performance while reducing overall system resource consumption and deployment complexity.
 
 \paragraph{Hyperparameters.}
 For frequency-based API relation extraction, we set the sliding window size to 20 and select the top-5 most frequent APIs as related APIs.

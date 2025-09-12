@@ -10,7 +10,7 @@ mpl.rcParams["font.family"] = "Linux Libertine"
 rounds = list(range(10))
 
 data = {
-    "DeepSeek v3": [
+    "DeepSeek-V3": [
         0.608,
         0.608,
         0.608,
@@ -22,7 +22,7 @@ data = {
         0.856,
         0.856,
     ],
-    "Gemma 3 4B": [
+    "Gemma-3-4B": [
         0.608,
         0.799,
         0.856,
@@ -34,7 +34,7 @@ data = {
         0.856,
         0.856,
     ],
-    "GPT-OSS 20B": [
+    "GPT-OSS-20B": [
         0.526,
         0.608,
         0.722,
@@ -46,7 +46,7 @@ data = {
         0.835,
         0.835,
     ],
-    "GPT-OSS 120B": [
+    "GPT-OSS-120B": [
         0.598,
         0.737,
         0.809,

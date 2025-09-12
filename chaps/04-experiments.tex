@@ -94,7 +94,7 @@ Table~\ref{tab:tokens-comparison} reports the token counts for each constraint g
 Table~\ref{tab:comparing-llms} shows results when varying the LLM used for the
 \emph{Constraint Learning} module, while keeping \emph{Attack Generation} and
 \emph{Prompt Refinement} fixed to DeepSeek-V3.
-Across all four models (\texttt{DeepSeek-V3}, \texttt{Gemma 3 4B}, \texttt{GPT-OSS 20B}, \texttt{GPT-OSS 120B}),
+Across all four models (\texttt{DeepSeek-V3}, \texttt{Gemma-3-4B}, \texttt{GPT-OSS-20B}, \texttt{GPT-OSS-120B}),
 precision remains consistently perfect (1.00),
 and recall varies only slightly
 (0.83--0.86 on \trainticket and 0.90--0.95 on \nicefish).
@@ -107,7 +107,7 @@ without sacrificing detection accuracy.
 \finding{\textbf{RQ3:} \lighttechname maintains high performance across different LLMs, confirming its adaptability to smaller, locally deployable models.}
 
 \paragraph{RQ4: Direct Substitution.}
-To further validate our design, we directly substitute WebNorm’s backbone with a smaller LLM (e.g., \texttt{DeepSeek V3}),
+To further validate our design, we directly substitute WebNorm’s backbone with an open-source LLM (e.g., \texttt{DeepSeek-V3}),
 without applying any of our proposed architectural modifications.
 Performance drops sharply in recall: on \trainticket, recall falls from 0.92 to 0.60, and on \nicefish, from 0.95 to 0.50.
 This experiment shows that simply replacing heavyweight proprietary models with smaller ones is insufficient.
