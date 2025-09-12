@@ -73,7 +73,7 @@ Each API may produce logs with diverse structures, including nested dictionaries
 Here, \texttt{unknown} denotes cases where the log structure cannot be precisely determined (e.g., due to ambiguity or inconsistency). By aggregating logs across APIs, \lighttechname derives unified schemas that reconcile structural variations.
 
 \paragraph{Expansion.}
-After schema discovery, we apply a set of expansion rules to transform nested structures into flat fields. This ensures that all relevant information is explicitly represented, thereby facilitating clustering and constraints generation.
+After schema discovery, we apply a set of expansion rules to transform nested structures into flat fields. This ensures that all relevant information is explicitly represented, thereby facilitating clustering and constraint generation.
 
 The rules are as follows:
 \begin{itemize}
@@ -96,7 +96,7 @@ Through this pipeline, lengthy and complex logs are transformed into compact, se
 
 \subsubsection{Constraint Generation}
 
-The constraints generation process of \lighttechname closely resembles that of WebNorm, with the key distinction that its prompts are not manually crafted but automatically derived through the subsequent attack-generation and prompt-refinement loop, making them more suitable for lightweight LLMs. Given the structured logs, \lighttechname first instructs the LLM to produce candidate constraints in the form of executable rules that capture constraints across different fields. These candidates are then iteratively evaluated against training logs, and any violations on normal cases are fed back to the LLM along with contextual information, prompting it to revise or discard the problematic constraints. Through this feedback loop, the system gradually converges to a compact and reliable set of constraints that preserve both structural correctness and semantic consistency.
+The constraint generation process of \lighttechname closely resembles that of WebNorm, with the key distinction that its prompts are not manually crafted but automatically derived through the subsequent attack-generation and prompt-refinement loop, making them more suitable for lightweight LLMs. Given the structured logs, \lighttechname first instructs the LLM to produce candidate constraints in the form of executable rules that capture constraints across different fields. These candidates are then iteratively evaluated against training logs, and any violations on normal cases are fed back to the LLM along with contextual information, prompting it to revise or discard the problematic constraints. Through this feedback loop, the system gradually converges to a compact and reliable set of constraints that preserve both structural correctness and semantic consistency.
 
 \subsection{Attack Generation}
 
@@ -118,7 +118,7 @@ By grounding attack generation in this taxonomy, our framework inherits both bre
 \subsection{Prompt Refinement}
 
 
-After attack generation, we obtain a labeled dataset consisting of both normal and attack logs. Our next task is to refine the prompts used in constraints generation, so that they can better capture the constraints needed to detect the synthesized attacks. The refinement process is similar to learning a model from labeled data, where the input dataset is the logs and the labels are whether each log is normal or attack. The difference is that instead of adjusting model parameters by policy gradient or backpropagation, we update the prompt text itself using an LLM.
+After attack generation, we obtain a labeled dataset consisting of both normal and attack logs. Our next task is to refine the prompts used in constraint generation, so that they can better capture the constraints needed to detect the synthesized attacks. The refinement process is similar to learning a model from labeled data, where the input dataset is the logs and the labels are whether each log is normal or attack. The difference is that instead of adjusting model parameters by policy gradient or backpropagation, we update the prompt text itself using an LLM.
 
 \input{floats/03-04-refinement.tex}
 

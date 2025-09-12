@@ -4,7 +4,7 @@
 
 \subsection{Impact of Adversarial Attacks on Prompt Refinement}
 
-Adversarial attacks play a crucial role in refining the prompts used for constraints generation. At the initial stage (Round 0), the prompt may fail to capture critical constraints, leading to missed detections for certain types of tamper attacks. However, when we introduce adversarial attacks that exploit these weaknesses, the system is forced to adapt: the failure cases serve as concrete counterexamples that guide the prompt-refinement process. After just one refinement iteration (Round 1), the updated prompt can successfully detect the previously missed anomaly.
+Adversarial attacks play a crucial role in refining the prompts used for constraint generation. At the initial stage (Round 0), the prompt may fail to capture critical constraints, leading to missed detections for certain types of tamper attacks. However, when we introduce adversarial attacks that exploit these weaknesses, the system is forced to adapt: the failure cases serve as concrete counterexamples that guide the prompt-refinement process. After just one refinement iteration (Round 1), the updated prompt can successfully detect the previously missed anomaly.
 
 For example, in Round 0, \lighttechname fails to detect an attack where \texttt{arguments.oti.assurance} is set to a negative value (\texttt{-2}). After one iteration of adversarial attack–guided refinement, the refined prompt introduces explicit range constraints on numeric fields, which leads to the learned constraint \texttt{assert log["arguments.oti.assurance"] > 0}. This constraint enables the system to identify the anomaly that was previously overlooked. More detailed examples can be found in our repository~\cite{agenticnorm-website}.
 
@@ -35,6 +35,7 @@ Despite the promising results of AgenticNorm, several limitations remain.
 Our evaluation is restricted to two benchmarks (TrainTicket and NiceFish).
 While these datasets are widely used in prior work, they may not fully reflect the diversity of real-world applications, especially in large-scale industrial or domain-specific systems.
 Moreover, our attack synthesis is guided by the OWASP API Security Top 10, which provides strong coverage of common vulnerabilities but may overlook emerging or highly specialized attack patterns.
+This suggests that future work should consider integrating adaptive or domain-specific attack taxonomies.
 
 \paragraph{Model Dependencies.}
 Although AgenticNorm is designed for lightweight deployment, certain modules (e.g., attack generation and prompt refinement) still rely on larger open-source models.

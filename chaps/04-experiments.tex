@@ -84,7 +84,7 @@ showing that it provides complementary benefits.
 \input{floats/04-04-tokens}
 
 To further evaluate the effectiveness of field clustering, we analyze the total number of input tokens in the prompts, comparing settings with and without clustering.
-Table~\ref{tab:tokens-comparison} reports the token counts for each constraints generation task. The reduction is particularly pronounced on \trainticket, as its logs contain more fields, and clustering eliminates a larger portion of redundancy. By shortening the token length, the model can process inputs more efficiently, which in turn leads to higher-quality constraints.
+Table~\ref{tab:tokens-comparison} reports the token counts for each constraint generation task. The reduction is particularly pronounced on \trainticket, as its logs contain more fields, and clustering eliminates a larger portion of redundancy. By shortening the token length, the model can process inputs more efficiently, which in turn leads to higher-quality constraints.
 
 \finding{\textbf{RQ2:} Each component of \lighttechname improves performance, with field clustering and prompt refinement being especially crucial.}
 
