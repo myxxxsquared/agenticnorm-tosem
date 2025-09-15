@@ -6,7 +6,9 @@
 
 Adversarial attacks play a crucial role in refining the prompts used for constraint generation. At the initial stage (Round 0), the prompt may fail to capture critical constraints, leading to missed detections for certain types of tamper attacks. However, when we introduce adversarial attacks that exploit these weaknesses, the system is forced to adapt: the failure cases serve as concrete counterexamples that guide the prompt-refinement process. After just one refinement iteration (Round 1), the updated prompt can successfully detect the previously missed anomaly.
 
-For example, in Round 0, \lighttechname fails to detect an attack where \texttt{arguments.oti.assurance} is set to a negative value (\texttt{-2}). After one iteration of adversarial attack–guided refinement, the refined prompt introduces explicit range constraints on numeric fields, which leads to the learned constraint \texttt{assert log["arguments.oti.assurance"] > 0}. This constraint enables the system to identify the anomaly that was previously overlooked. More detailed examples can be found in our repository~\cite{agenticnorm-website}.
+\modifypart{
+For example, as shown in Figure~\ref{fig:example}, in Round 0, \lighttechname fails to detect an attack where \texttt{arguments.oti.assurance} is assigned a negative value (\texttt{-2}). In the first iteration of attack generation, \lighttechname produces an attack in the \textit{Unsafe Consumption of APIs} category, which involves assigning out-of-range values to fields. The refined prompt introduces explicit range constraints on numeric fields, resulting in the learned constraint. This new constraint allows the system to correctly identify the anomaly that was previously missed.
+}
 
 This self-improving loop demonstrates how adversarial attacks not only test the robustness of the system but also actively drive the enhancement of detection accuracy, ultimately reducing the need for manual intervention and improving efficiency in practice.
 
