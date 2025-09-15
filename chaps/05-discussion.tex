@@ -17,19 +17,22 @@ This self-improving loop demonstrates how adversarial attacks not only test the 
 
 \input{floats/05-02-tokens}
 
-Figure~\ref{fig:rounds-of-refinement} shows the effect of iterative prompt refinement on detection performance across different models. Recall improves consistently in the early rounds, with most models reaching their highest performance by Round 5–6. After this point, additional refinements no longer yield noticeable gains, and performance stabilizes after 5-6 rounds.
+Figure~\ref{fig:rounds-of-refinement} presents the effect of iterative prompt refinement on detection performance across different models. We observe that recall improves steadily during the early rounds, as each iteration introduces additional constraints that the models can leverage for anomaly detection. Most models reach their highest performance by round 5-6, after which additional refinements yield diminishing returns and performance stabilizes. This pattern suggests that iterative refinement is highly effective in the initial phase, where previously missing constraints are incrementally uncovered, but exhibits saturation once the critical set of constraints has been captured.
 
 This trend aligns with Figure~\ref{fig:number-of-tokens}, which shows that the number of tokens in the refined prompts continues to increase with each round. While longer prompts provide more detailed constraints, they eventually add little marginal benefit, indicating that the models have already captured the critical constraints needed for detection. Beyond this stage, further refinement mainly increases prompt complexity without improving effectiveness.
+
+% This observation is further supported by Figure~\ref{fig:number-of-tokens}, which shows that the number of tokens in the refined prompts continues to grow with each round. While longer prompts provide richer descriptions and more detailed constraints, the marginal benefit decreases over time. Once the essential semantic rules are incorporated, further prompt expansion mainly increases textual complexity without translating into measurable performance gains. In practice, this indicates a natural stopping point for refinement: beyond 5-6 rounds, additional iterations introduce overhead for both model inference and human interpretability, but do not substantially improve detection quality.
 
 \subsection{False Negatives}
 
 \input{floats/05-04-example-fn}
 
-While \lighttechname achieves high precision and recall, some false negatives remain. Figure~\ref{fig:example-fn} illustrates a case from \trainticket that \lighttechname fails to detect. In this example, the field \texttt{arguments.oti.assurance} should only take values in the range \{0, 1, 2, 3\} according to the system documentation. However, since \lighttechname does not have access to this external knowledge, it cannot identify the tampering when the field is set to an out-of-range value (e.g., 5). Currently, our approach relies solely on patterns learned from the logs, which may not cover all domain-specific constraints.
-More detailed examples can be found in our repository~\cite{agenticnorm-website}.
+Although \lighttechname achieves consistently high precision and recall, some false negatives inevitably remain. Figure~\ref{fig:example-fn} illustrates one such case from \trainticket where \lighttechname fails to detect the anomaly. In this example, the field \texttt{arguments.oti.assurance} is documented to only take values in the range \{0, 1, 2, 3\}. When the field is tampered with and set to an out-of-range value (e.g., 5), the violation should be flagged as anomalous. However, because \lighttechname does not have direct access to external domain knowledge such as system documentation or API specifications, it cannot infer that the injected value is invalid. 
+This limitation highlights an important trade-off in our design: the reliance on constraints inferred purely from runtime logs ensures broad applicability in scenarios where source code or documentation is unavailable, but it also means that certain domain-specific invariants may not be captured.
+
 
 \subsection{Limitations}
-Despite the promising results of AgenticNorm, several limitations remain.
+Despite the promising results of \lighttechname, several limitations remain.
 
 \paragraph{Benchmark Selection.}
 Our evaluation is restricted to two benchmarks (TrainTicket and NiceFish).
@@ -38,6 +41,6 @@ Moreover, our attack synthesis is guided by the OWASP API Security Top 10, which
 This suggests that future work should consider integrating adaptive or domain-specific attack taxonomies.
 
 \paragraph{Model Dependencies.}
-Although AgenticNorm is designed for lightweight deployment, certain modules (e.g., attack generation and prompt refinement) still rely on larger open-source models.
+Although \lighttechname is designed for lightweight deployment, certain modules (e.g., attack generation and prompt refinement) still rely on larger open-source models.
 This hybrid strategy ensures effectiveness but may limit applicability in environments with strict computational or resource constraints.
 In addition, the iterative prompt refinement process increases prompt length and complexity, which may reduce efficiency and introduce difficulties in maintaining refined prompts at scale.
