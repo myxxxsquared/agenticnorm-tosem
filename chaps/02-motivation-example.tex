@@ -35,18 +35,12 @@ Existing log-based anomaly detection methods fall into two categories:
 Model-learning-based approaches struggle in this scenario because normal and attack logs differ in only a few fields, making them nearly indistinguishable in embedding space.
 Furthermore, anomalies may be buried within long sequences of interleaved events, diluting the anomaly signal.
 
-WebNorm~\cite{liao2024detecting} addresses this limitation by learning semantic constraints from logs with the help of LLMs.
-\modifypart{
-For example, WebNorm can infer the some constraints like \texttt{arguments.orderId} should be a valid UUID.
-By mapping code-level data flows to log fields and validating them as constraints, WebNorm can flag any violations as anomalies.
-However, due to prompt design and long input logs, WebNorm cannot capture the critical cross-API constraint needed to detect this attack.
-}
+The rule-learning-based approach WebNorm~\cite{liao2024detecting} addresses this limitation by leveraging LLMs to infer semantic constraints from logs. For instance, it can derive constraints such as requiring \texttt{arguments.orderId} to be a valid UUID. By mapping code-level data flows to log fields and validating them as constraints, WebNorm can flag any violations as anomalies. However, due to its prompt design and the lengthy, nested nature of input logs, the authors acknowledge that WebNorm fails to capture the some cross-API constraint illustrated in Figure~\ref{fig:motivating_example}, leaving such attacks undetected~\cite{liao2024detecting}. Despite its strengths, WebNorm still suffers from three key limitations:
 
 \input{floats/02-04-number-of-tokens-in-input}
 
 \input{floats/02-05-webnorm-prompt}
 
-WebNorm suffers from three key limitations:
 \begin{itemize}
     \item \textbf{Dependence on program analysis and source code}: WebNorm requires access to and instrumentation of frontend/backend code, which is costly, fragile under rapid iteration, and infeasible for closed-source or third-party systems.
     \item \textbf{Reliance on heavyweight proprietary LLMs}: constraint synthesis depends on remote, proprietary LLMs, leading to cost and privacy risks. However, if directly replaced with a local deployable model, the long and nested logs often exceed the ability of small models, reducing effectiveness. Table~\ref{tab:webnorm-input-tokens} shows the number of input tokens for two datasets. The mean input length for \trainticket is $2.40 \times 10^5$ tokens, far exceeding the context window of lightweight models due to very lengthy logs. Even for \nicefish, which has shorter logs, the mean input length is $1.50 \times 10^4$ tokens, still too long for lightweight models.
@@ -61,7 +55,7 @@ Unlike WebNorm, our approach relies only on logs (without program analysis), ope
 \lighttechname directly infers constraints from raw logs. \lighttechname discovers inter-API relationships using frequency-based analysis of co-occurring API logs and derives constraints. To handle long and nested logs, \lighttechname employs \textbf{Field Clustering} to reduce input length while retaining meaningful comparisons. To mitigate prompt sensitivity, \lighttechname introduces \textbf{Prompt Refinement via Generated Attacks}, to iteratively improve prompts using adversarially generated logs that reveal missing constraints.
 
 \paragraph{Field Clustering}
-To efficiently adapt logs for lightweight models, we expand each log entity into individual fields and then group comparable ones into clusters.
+To efficiently adapt logs for lightweight models, \lighttechname expands each log entity into individual fields and then groups comparable ones into clusters.
 Figure~\ref{fig:motivating_example_clustering} illustrates this process. Each cluster is given as a separate input to the LLM, ensuring that related fields are explicitly compared while avoiding unnecessary context.
 
 \input{floats/02-02-motivation-example-clustering}
