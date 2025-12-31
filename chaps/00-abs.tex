@@ -2,18 +2,18 @@
 Web applications support important areas such as finance, e-commerce, and healthcare, making their reliability and security of paramount importance. 
 However, web frontends are inherently manipulable, and abnormal client behaviors may evade backend checks, creating exploitable vulnerabilities. 
 Log analysis has emerged as an effective defense by capturing client-server interactions.
-Two main categories of log analysis methods exist: model-learning-based approaches that train predictive models from normal logs, and rule-learning-based approaches that mine logical constraints from logs.
-However, these two categories have their limitations.
-Model-learning-based methods detect anomalies by training predictive models on normal logs, but they suffer from poor interpretability, high false positive rates, and difficulty in capturing subtle attacks. 
-Rule-learning-based methods provide stronger interpretability by extracting explicit constraints, as exemplified by WebNorm, but they rely heavily on program instrumentation, heavyweight proprietary models, and manually engineered prompts.  
+Existing approaches typically learn models from logs, either by training neural network models for anomaly classification or by directly using LLMs for anomaly judgment.
+However, these model-learning-based approaches suffer from poor interpretability and high false positive rates, making practical deployment challenging.
+To address these limitations, our prior work WebNorm proposed a rule-learning-based approach that extracts explicit constraints from logs, providing stronger interpretability.
+However, WebNorm relies heavily on program instrumentation for source code analysis, heavyweight proprietary language models, and manually engineered prompts, limiting its broader applicability.
 
-In this paper, we present \lighttechname, a lightweight anomaly detection framework built upon lightweight, locally deployable LLMs. 
-\lighttechname avoids program-analysis dependence, removes reliance on heavyweight proprietary models, and mitigates prompt sensitivity through three innovations: 
-(1) eliminating source-code dependence via frequency-based inter-API relation discovery, 
-(2) reducing log complexity through field clustering into semantically coherent groups, and 
-(3) iteratively refining prompts with adversarially generated attack logs. 
-These components are integrated into a multi-agent workflow that progressively improves anomaly detection without extensive human intervention.  
+This paper presents \lighttechname, a significant extension of WebNorm that addresses these limitations through a lightweight anomaly detection framework built upon locally deployable LLMs. 
+Building on WebNorm's foundation of constraint-based anomaly detection, we extend the approach with three key innovations: 
+(1) eliminating source-code dependence via frequency-based inter-API relation discovery, enabling application to closed-source systems, 
+(2) reducing log complexity through field clustering into semantically coherent groups, making lightweight models feasible for large-scale logs, and 
+(3) iteratively refining prompts with adversarially generated attack logs, overcoming prompt sensitivity and manual engineering requirements. 
+These components are integrated into a novel multi-agent workflow that progressively improves anomaly detection without extensive human intervention.  
 
-We implement and evaluate \lighttechname on popular benchmarks, including TrainTicket and NiceFish. 
-Results demonstrate that \lighttechname achieves effective and interpretable anomaly detection while requiring significantly less contextual information compared to existing approaches.
+We conduct comprehensive experiments on popular benchmarks, including TrainTicket and NiceFish, covering over 220k log entries and 230 attack cases.
+Results demonstrate that \lighttechname significantly outperforms the original WebNorm, achieving F1-scores of 0.92 and 0.85 compared to WebNorm's 0.88 and 0.75, while requiring significantly less contextual information and eliminating the need for source code access and proprietary models.
 \end{abstract}
